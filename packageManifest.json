@@ -1,0 +1,83 @@
+{
+  "packageName": "Home Connection Integration",
+  "author": "Rangner Ferraz Guimaraes",
+  "version": "1.0",
+  "minimumHEVersion": "2.3.0",
+  "dateReleased": "2021-11-28",
+  "apps": [
+    {
+      "id": "ee682ca7-5a62-4460-b620-ede9f8b07f3d",
+      "name": "",
+      "namespace": "",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/apps/HomeConnect.groovy",
+      "required": true,
+      "oauth": true,
+      "primary": false
+    }
+  ],
+  "drivers": [
+    {
+      "id": "1aa1ba6d-c23a-4a97-9e7f-f0fccaa78274",
+      "name": "Home Connect CoffeeMaker",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/CoffeeMaker.groovy",
+      "required": true
+    },
+    {
+      "id": "c2eebafe-bbb6-4cc9-ae59-c1cdcb6d96de",
+      "name": "Home Connect Dishwasher",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Dishwasher.groovy",
+      "required": true
+    },
+    {
+      "id": "1393c717-385f-4939-8631-174ceb9a97b4",
+      "name": "Home Connect Dryer",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Dryer.groovy",
+      "required": true
+    },
+    {
+      "id": "c0c9fa44-a118-4bbc-8911-aea2e5471450",
+      "name": "Home Connect FridgeFreezer",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/FridgeFreezer.groovy",
+      "required": true
+    },
+    {
+      "id": "994a0ecb-b960-4959-99d1-6fe20a67cb67",
+      "name": "Home Connect Hob",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Hob.groovy",
+      "required": true
+    },
+    {
+      "id": "137cd9fd-0d0b-40d2-a83f-8a83bbec8e30",
+      "name": "Home Connect Hood",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Hood.groovy",
+      "required": true
+    },
+    {
+      "id": "4a341374-d613-44aa-ba65-2b6d0befca77",
+      "name": "Home Connect Oven",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Oven.groovy",
+      "required": true
+    },
+    {
+      "id": "06915ec6-3d6e-4806-84f5-75f86d7b9d42",
+      "name": "Home Connect Washer",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Washer.groovy",
+      "required": true
+    },
+    {
+      "id": "c8bb44fe-1626-4d86-ba5c-027ac8c2176f",
+      "name": "Home Connect WasherDryer",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/WasherDryer.groovy",
+      "required": true
+    }
+  ]
+}
