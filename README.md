@@ -22,4 +22,4 @@ I did this on my free time and for sure there are bugs so use it on your own ris
 
 # Credits
 This was all possible due to the work done by https://github.com/Wattos/hubitat to support the Homme Connect API.
-And of course, the Hubitat dev community!
+And of course, the Hubitat dev community! If you want to buy me a beer please [click here](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=GNAVZ94NC3FQL&currency_code=CAD)
