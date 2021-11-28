@@ -1,0 +1,14 @@
+hpm manifest-create packageManifest.json --name="Home Connection Integration" --author="Rangner Ferraz Guimaraes" --version=1.0 --heversion=2.3.0 --datereleased=2021-11-28
+hpm manifest-add-app packageManifest.json --location=https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/apps/HomeConnect.groovy --required=true --oauth=true
+hpm manifest-add-driver packageManifest.json --location=https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/CoffeeMaker.groovy --required=true
+hpm manifest-add-driver packageManifest.json --location=https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Dishwasher.groovy --required=true
+hpm manifest-add-driver packageManifest.json --location=https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Dryer.groovy --required=true
+hpm manifest-add-driver packageManifest.json --location=https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/FridgeFreezer.groovy --required=true
+hpm manifest-add-driver packageManifest.json --location=https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Hob.groovy --required=true
+hpm manifest-add-driver packageManifest.json --location=https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Hood.groovy --required=true
+hpm manifest-add-driver packageManifest.json --location=https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Oven.groovy --required=true
+hpm manifest-add-driver packageManifest.json --location=https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/Washer.groovy --required=true
+hpm manifest-add-driver packageManifest.json --location=https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/WasherDryer.groovy --required=true
+
+hpm repository-create repository.json --author="Rangner Ferraz Guimaraes" --githuburl=https://github.com/rfg81/hubitat-homeconnect --paypalurl="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=GNAVZ94NC3FQL&currency_code=CAD"
+hpm repository-add-package repository.json --manifest=https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/packageManifest.json --name="Home Connect Integration" --category=Integrations --description="Integration for Home Connect appliances"
