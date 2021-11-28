@@ -7,8 +7,8 @@
   "apps": [
     {
       "id": "ee682ca7-5a62-4460-b620-ede9f8b07f3d",
-      "name": "",
-      "namespace": "",
+      "name": "Home Connect Integration",
+      "namespace": "rferrazguimaraes",
       "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/apps/HomeConnect.groovy",
       "required": true,
       "oauth": true,
