@@ -7,12 +7,9 @@
       "id": "dfc0d95f-06a4-45ae-8f4a-c0be22f85037",
       "name": "Home Connect Integration",
       "category": "Integrations",
-	  "tags": [
-        "Cloud",
-        "Appliances"
-      ],
       "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/packageManifest.json",
-      "description": "Integration for Home Connect appliances [Bosch, Thermador and Gaggenau]"
+      "description": "Integration for Home Connect appliances [Bosch, Thermador and Gaggenau]",
+	  "tags": [ "Cloud", "Appliances" ]
     }
   ]
 }
