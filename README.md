@@ -15,10 +15,10 @@ Washer<br>
 WasherDryer<br>
 
 # Installation
-The best way to install is to use "Hubitat Package Manager".
+The easiest way to install it is to use "Hubitat Package Manager". The steps necessary to access your appliances are written in the APP.
 
 # Note
-I did this on my free time and for sure there are bugs so use it on your own risk. Some of the features are not yet supported (I just own the dishwasher so I can't really test on other appliances). If other developers are willing to add better support for the other devices just send me a pull request :)
+I did this on my free time and for sure there are bugs so use it at your own risk. Some of the features are not yet supported (I just own the dishwasher so I can't really test it on other appliances). If other developers are willing to add better support for the other appliances, just send me a pull request :)
 
 # Credits
 This was all possible due to the work done by https://github.com/Wattos/hubitat to support the Homme Connect API.
