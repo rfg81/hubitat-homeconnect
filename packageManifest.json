@@ -12,7 +12,7 @@
       "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/apps/HomeConnect.groovy",
       "required": true,
       "oauth": true,
-      "primary": false
+      "primary": true
     }
   ],
   "drivers": [
