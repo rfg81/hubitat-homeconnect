@@ -12,7 +12,7 @@
         "Appliances"
       ],
       "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/packageManifest.json",
-      "description": "Integration for Home Connect appliances"
+      "description": "Integration for Home Connect appliances [Bosch, Thermador and Gaggenau]"
     }
   ]
 }
