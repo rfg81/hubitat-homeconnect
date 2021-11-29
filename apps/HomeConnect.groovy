@@ -101,8 +101,8 @@ def pageIntro() {
                     |It will allow you to monitor your smart appliances from Home Connect within Hubitat.
                     |
                     |Please note, before you can proceed, you will need to:
-                    | 1. Sign up at <a href="https://developer.home-connect.com/">Home Connect Developer Portal</a>.
-                    | 2. Go to <a href="https://developer.home-connect.com/applications">Home Connect Applications</a>.
+                    | 1. Sign up at <a href="https://developer.home-connect.com/" target='_blank'>Home Connect Developer Portal</a>.
+                    | 2. Go to <a href="https://developer.home-connect.com/applications" target='_blank'>Home Connect Applications</a>.
                     | 3. Register a new application with the following values:
                     |    * <b>Application ID</b>: hubitat-homeconnect-integration
                     |    * <b>OAuth Flow</b>: Authorization Code Grant Flow
