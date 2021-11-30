@@ -1,5 +1,5 @@
 # Hubitat-HomeConnect
-Integration for Home Connect appliances [Bosch, Thermador and Gaggenau] for Hubitat 
+Integration for Home Connect appliances [Bosch, Siemens, Neff, Balay, Constructa, Pitsos, Profilo, Thermador and Gaggenau] for Hubitat 
 
 # What can I do with this driver?
 Here is a list of currently supported appliances (not all appliances are fully supported):
