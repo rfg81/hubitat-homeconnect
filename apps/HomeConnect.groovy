@@ -441,9 +441,6 @@ def processData(device, data) {
                     device.sendEvent(name: "DoorState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
                     device.sendEvent(name: "contact", value: "${it.displayvalue.toLowerCase()}")
                 break
-                case "BSH.Common.Status.LocalControlActive":
-                    device.sendEvent(name: "RemoteControlActive", value: "${it.value}", displayed: true, isStateChange: true)
-                break
                 case "BSH.Common.Status.OperationState":
                     device.sendEvent(name: "OperationState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
                 break
@@ -514,9 +511,6 @@ def processData(device, data) {
                 break
                 case "Cooking.Common.Option.Hood.IntensiveLevel":
                     device.sendEvent(name: "IntensiveLevel", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "Cooking.Oven.Status.CurrentCavityTemperature":
-                    device.sendEvent(name: "CurrentCavityTemperature", value: "${it.value}", displayed: true, isStateChange: true)
                 break
                 case "error":
                     device.sendEvent(name: "LastErrorMessage", value: "${Utils.convertErrorMessageTime(it.value?.description)}", displayed: true)
