@@ -453,8 +453,17 @@ def processData(device, data) {
                 case "BSH.Common.Status.RemoteControlStartAllowed":
                     device.sendEvent(name: "RemoteControlStartAllowed", value: "${it.value}", displayed: true, isStateChange: true)
                 break
+                case "BSH.Common.Setting.AlarmClock":
+                    device.sendEvent(name: "AlarmClock", value: "${it.value}", displayed: true, isStateChange: true)
+                break
+                case "BSH.Common.Setting.ChildLock":
+                    device.sendEvent(name: "ChildLock", value: "${it.value}", displayed: true, isStateChange: true)
+                break
                 case "BSH.Common.Setting.PowerState":
                     device.sendEvent(name: "PowerState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
+                break
+                case "BSH.Common.Setting.TemperatureUnit":
+                    device.sendEvent(name: "TemperatureUnit", value: (it.value == "BSH.Common.EnumType.TemperatureUnit.Fahrenheit") ? "Fahrenheit" : "Celcius", displayed: true, isStateChange: true)
                 break
                 case "BSH.Common.Root.SelectedProgram":
                     device.sendEvent(name: "SelectedProgram", value: "${it.displayvalue}", displayed: true, isStateChange: true)
@@ -514,9 +523,6 @@ def processData(device, data) {
                 break
                 case "Cooking.Common.Option.Hood.IntensiveLevel":
                     device.sendEvent(name: "IntensiveLevel", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "Cooking.Oven.Status.CurrentCavityTemperature":
-                    device.sendEvent(name: "CurrentCavityTemperature", value: "${it.value}", displayed: true, isStateChange: true)
                 break
                 case "error":
                     device.sendEvent(name: "LastErrorMessage", value: "${Utils.convertErrorMessageTime(it.value?.description)}", displayed: true)
