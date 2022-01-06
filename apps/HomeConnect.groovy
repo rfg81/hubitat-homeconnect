@@ -441,6 +441,9 @@ def processData(device, data) {
                     device.sendEvent(name: "DoorState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
                     device.sendEvent(name: "contact", value: "${it.displayvalue.toLowerCase()}")
                 break
+                case "BSH.Common.Status.LocalControlActive":
+                    device.sendEvent(name: "LocalControlActive", value: "${it.value}", displayed: true, isStateChange: true)
+                break
                 case "BSH.Common.Status.OperationState":
                     device.sendEvent(name: "OperationState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
                 break
