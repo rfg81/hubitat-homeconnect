@@ -17,6 +17,7 @@
  *  Author: Rangner Ferraz Guimaraes (rferrazguimaraes)
  *  Date: 2021-11-28
  *  Version: 1.0 - Initial commit
+ *  Version: 2.0 - Added missing event messages and support to Refrigerator and Freezer
  */
 
 import groovy.transform.Field
@@ -40,7 +41,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "1.0" }
+def driverVer() { return "2.0" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -202,6 +203,8 @@ def synchronizeDevices() {
             case "WasherDryer":
                 device = addChildDevice('rferrazguimaraes', 'Home Connect WasherDryer', hubitatDeviceId);
             break
+            case "Refrigerator":
+            case "Freezer":
             case "FridgeFreezer":
                 device = addChildDevice('rferrazguimaraes', 'Home Connect FridgeFreezer', hubitatDeviceId);
             break
@@ -437,12 +440,16 @@ def processData(device, data) {
     //if(data instanceof ArrayList) {
         data.each {
             switch(it.key) {
+                case "BSH.Common.Root.ActiveProgram":
+                    device.sendEvent(name: "ActiveProgram", value: "${it.displayvalue}", displayed: true, isStateChange: true)
+                break
+                case "BSH.Common.Root.SelectedProgram":
+                    device.sendEvent(name: "SelectedProgram", value: "${it.displayvalue}", displayed: true, isStateChange: true)
+                    device.updateSetting("selectedProgram", [value:"${it.displayvalue}", type:"enum"])
+                break
                 case "BSH.Common.Status.DoorState":
                     device.sendEvent(name: "DoorState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
-                    device.sendEvent(name: "contact", value: "${it.displayvalue.toLowerCase()}")
-                break
-                case "BSH.Common.Status.LocalControlActive":
-                    device.sendEvent(name: "LocalControlActive", value: "${it.value}", displayed: true, isStateChange: true)
+                    device.sendEvent(name: "contact", value: "${it.displayvalue?.toLowerCase()}")
                 break
                 case "BSH.Common.Status.OperationState":
                     device.sendEvent(name: "OperationState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
@@ -453,24 +460,20 @@ def processData(device, data) {
                 case "BSH.Common.Status.RemoteControlStartAllowed":
                     device.sendEvent(name: "RemoteControlStartAllowed", value: "${it.value}", displayed: true, isStateChange: true)
                 break
-                case "BSH.Common.Setting.AlarmClock":
-                    device.sendEvent(name: "AlarmClock", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Setting.ChildLock":
-                    device.sendEvent(name: "ChildLock", value: "${it.value}", displayed: true, isStateChange: true)
-                break
                 case "BSH.Common.Setting.PowerState":
                     device.sendEvent(name: "PowerState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
                 break
                 case "BSH.Common.Setting.TemperatureUnit":
-                    device.sendEvent(name: "TemperatureUnit", value: (it.value == "BSH.Common.EnumType.TemperatureUnit.Fahrenheit") ? "Fahrenheit" : "Celcius", displayed: true, isStateChange: true)
+                    device.sendEvent(name: "TemperatureUnit", value: "${it.displayvalue?.substring(it.displayvalue?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
                 break
-                case "BSH.Common.Root.SelectedProgram":
-                    device.sendEvent(name: "SelectedProgram", value: "${it.displayvalue}", displayed: true, isStateChange: true)
-                    device.updateSetting("selectedProgram", [value:"${it.displayvalue}", type:"enum"])
+                case "BSH.Common.Setting.ChildLock":
+                    device.sendEvent(name: "ChildLock", value: "${it.value}", displayed: true, isStateChange: true)
                 break
-                case "BSH.Common.Root.ActiveProgram":
-                    device.sendEvent(name: "ActiveProgram", value: "${it.displayvalue}", displayed: true, isStateChange: true)
+                case "BSH.Common.Setting.AlarmClock":
+                    device.sendEvent(name: "AlarmClock", value: "${it.value}", displayed: true, isStateChange: true)
+                break
+                case "BSH.Common.Setting.LocalControlActive":
+                    device.sendEvent(name: "LocalControlActive", value: "${it.value}", displayed: true, isStateChange: true)
                 break
                 case "BSH.Common.Option.RemainingProgramTime":
                     device.sendEvent(name: "RemainingProgramTime", value: "${Utils.convertSecondsToTime(it.value)}", displayed: true, isStateChange: true)
@@ -524,6 +527,9 @@ def processData(device, data) {
                 case "Cooking.Common.Option.Hood.IntensiveLevel":
                     device.sendEvent(name: "IntensiveLevel", value: "${it.value}", displayed: true, isStateChange: true)
                 break
+                case "Cooking.Oven.Status.CurrentCavityTemperature":
+                    device.sendEvent(name: "CurrentCavityTemperature", value: "${it.value}", displayed: true, isStateChange: true)
+                break                
                 case "error":
                     device.sendEvent(name: "LastErrorMessage", value: "${Utils.convertErrorMessageTime(it.value?.description)}", displayed: true)
                 break
