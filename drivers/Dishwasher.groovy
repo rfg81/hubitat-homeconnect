@@ -17,6 +17,7 @@
  *  Author: Rangner Ferraz Guimaraes (rferrazguimaraes)
  *  Date: 2021-11-28
  *  Version: 1.0 - Initial commit
+ *  Version: 2.0 - Added attributes ProgramProgress and RemainingProgramTime
  */
 
 import groovy.transform.Field
@@ -26,7 +27,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.0" }
+def driverVer() { return "2.0" }
 
 metadata {
     definition(name: "Home Connect Dishwasher", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
@@ -154,7 +155,10 @@ metadata {
             //  Key: BSH.Common.EnumType.EventPresentState.Confirmed
             // Description: The event has been confirmed by the user.
             "Confirmed"
-        ]
+        ]        
+        
+        attribute "ProgramProgress", "number"
+        attribute "RemainingProgramTime", "string"        
 
         // options - https://api-docs.home-connect.com/programs-and-options?#dishwasher
         attribute "IntensivZone", "string"
