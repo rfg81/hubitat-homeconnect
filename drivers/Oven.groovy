@@ -26,7 +26,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.0" }
+def driverVer() { return "1.1" }
 
 metadata {
     definition(name: "Home Connect Oven", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
@@ -121,7 +121,7 @@ metadata {
         ]
 
         attribute "ActiveProgram", "string"
-        attribute "SelectedProgram", "string"        
+        attribute "SelectedProgram", "string"  
 
         attribute "PowerState", "enum", [
             // Key: BSH.Common.EnumType.PowerState.Off
@@ -157,6 +157,8 @@ metadata {
         ]
         
         attribute "EventStreamStatus", "enum", ["connected", "disconnected"]
+        
+        attribute "CurrentCavityTemperature", "number"        
     }
     
     preferences {
