@@ -1,7 +1,7 @@
 {
   "packageName": "Home Connection Integration",
   "author": "Rangner Ferraz Guimaraes",
-  "version": "2.0",
+  "version": "2.1",
   "minimumHEVersion": "2.3.0",
   "dateReleased": "2021-11-28",
   "apps": [
