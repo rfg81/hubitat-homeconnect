@@ -156,6 +156,9 @@ metadata {
         ]
         
         attribute "EventStreamStatus", "enum", ["connected", "disconnected"]
+        
+        attribute "VentingLevel", "string"
+        attribute "IntensiveLevel", "string"
     }
     
     preferences {
