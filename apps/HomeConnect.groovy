@@ -522,10 +522,10 @@ def processData(device, data) {
                     device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
                 break
                 case "Cooking.Common.Option.Hood.VentingLevel":
-                    device.sendEvent(name: "VentingLevel", value: "${it.displayvalue}", displayed: true, isStateChange: true)
+                    device.sendEvent(name: "VentingLevel", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
                 break
                 case "Cooking.Common.Option.Hood.IntensiveLevel":
-                    device.sendEvent(name: "IntensiveLevel", value: "${it.value}", displayed: true, isStateChange: true)
+                    device.sendEvent(name: "IntensiveLevel", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
                 break
                 case "Cooking.Oven.Status.CurrentCavityTemperature":
                     device.sendEvent(name: "CurrentCavityTemperature", value: "${it.value}", displayed: true, isStateChange: true)
@@ -1382,7 +1382,7 @@ def Utils_create() {
                                      long millis = sec * 1000
                                      long hours = java.util.concurrent.TimeUnit.MILLISECONDS.toHours(millis)
                                      long minutes = java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(millis) % java.util.concurrent.TimeUnit.HOURS.toMinutes(1)
-                                     String timeString = String.format("%02dh:%02dm", Math.abs(hours), Math.abs(minutes))
+                                     String timeString = String.format("%02d:%02d", Math.abs(hours), Math.abs(minutes))
                                      return timeString
     }
     
