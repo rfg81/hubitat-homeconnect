@@ -17,6 +17,7 @@
  *  Author: Rangner Ferraz Guimaraes (rferrazguimaraes)
  *  Date: 2021-11-28
  *  Version: 1.0 - Initial commit
+ *  Version: 1.1 - Added LightingBrightness, Lighting and LocalControlActive attributes
  */
 
 import groovy.transform.Field
@@ -47,7 +48,7 @@ metadata {
 
         // BSH.Common.Status.RemoteControlActive
         // This status indicates whether the allowance for remote controlling is enabled.
-        attribute "RemoteControlActive", "enum", ["true", "true"]
+        attribute "RemoteControlActive", "enum", ["true", "false"]
 
         // BSH.Common.Status.RemoteControlStartAllowed
         // This status indicates whether the remote program start is enabled. 
@@ -159,6 +160,9 @@ metadata {
         
         attribute "VentingLevel", "string"
         attribute "IntensiveLevel", "string"
+        attribute "LightingBrightness", "number"
+        attribute "Lighting", "enum", ["true", "false"]
+        attribute "LocalControlActive", "enum", ["true", "false"]
     }
     
     preferences {
