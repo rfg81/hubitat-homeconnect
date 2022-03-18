@@ -18,6 +18,7 @@
  *  Date: 2021-11-28
  *  Version: 1.0 - Initial commit
  *  Version: 2.0 - Added missing event messages and support to Refrigerator and Freezer
+ *  Version: 2.1 - Added LightingBrightness, Lighting and LocalControlActive attributes
  */
 
 import groovy.transform.Field
@@ -41,7 +42,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "2.0" }
+def driverVer() { return "2.1" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -529,7 +530,13 @@ def processData(device, data) {
                 break
                 case "Cooking.Oven.Status.CurrentCavityTemperature":
                     device.sendEvent(name: "CurrentCavityTemperature", value: "${it.value}", displayed: true, isStateChange: true)
-                break                
+                break
+                case "Cooking.Common.Setting.LightingBrightness":
+                    device.sendEvent(name: "LightingBrightness", value: "${it.value}", displayed: true, isStateChange: true)
+                break
+                case "Cooking.Common.Setting.Lighting":
+                    device.sendEvent(name: "Lighting", value: "${it.value}", displayed: true, isStateChange: true)
+                break
                 case "error":
                     device.sendEvent(name: "LastErrorMessage", value: "${Utils.convertErrorMessageTime(it.value?.description)}", displayed: true)
                 break
