@@ -19,6 +19,7 @@
  *  Version: 1.0 - Initial commit
  *  Version: 2.0 - Added missing event messages and support to Refrigerator and Freezer
  *  Version: 2.1 - Added LightingBrightness, Lighting and LocalControlActive attributes
+ *  Version: 2.2 - Fixed LocalControlActive attribute
  */
 
 import groovy.transform.Field
@@ -42,7 +43,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "2.1" }
+def driverVer() { return "2.2" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -455,6 +456,9 @@ def processData(device, data) {
                 case "BSH.Common.Status.OperationState":
                     device.sendEvent(name: "OperationState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
                 break
+                case "BSH.Common.Status.LocalControlActive":
+                    device.sendEvent(name: "LocalControlActive", value: "${it.value}", displayed: true, isStateChange: true)
+                break
                 case "BSH.Common.Status.RemoteControlActive":
                     device.sendEvent(name: "RemoteControlActive", value: "${it.value}", displayed: true, isStateChange: true)
                 break
@@ -472,9 +476,6 @@ def processData(device, data) {
                 break
                 case "BSH.Common.Setting.AlarmClock":
                     device.sendEvent(name: "AlarmClock", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Setting.LocalControlActive":
-                    device.sendEvent(name: "LocalControlActive", value: "${it.value}", displayed: true, isStateChange: true)
                 break
                 case "BSH.Common.Option.RemainingProgramTime":
                     device.sendEvent(name: "RemainingProgramTime", value: "${Utils.convertSecondsToTime(it.value)}", displayed: true, isStateChange: true)
