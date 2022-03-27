@@ -296,7 +296,7 @@ def setPowertate(device, boolean state) {
 def setLighting(device, boolean state) {
     Utils.toLogger("debug", "setAmbientLightEnabled from ${device} - ${state}")
 
-    HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.Lighting", state ? "true" : "false") { settings ->
+    HomeConnectAPI.setSettings(device.deviceNetworkId, "Cooking.Common.Setting.Lighting", state ? "true" : "false") { settings ->
         device.deviceLog("info", "Settings Sent: ${updateState}")
     }
 }
