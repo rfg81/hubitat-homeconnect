@@ -20,6 +20,7 @@
  *  Version: 2.0 - Added missing event messages and support to Refrigerator and Freezer
  *  Version: 2.1 - Added LightingBrightness, Lighting and LocalControlActive attributes
  *  Version: 2.2 - Fixed LocalControlActive attribute
+ *  Version: 2.3 - Tried to add lighting and ambient light commands
  */
 
 import groovy.transform.Field
@@ -43,7 +44,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "2.2" }
+def driverVer() { return "2.3" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -288,6 +289,22 @@ def setPowertate(device, boolean state) {
     Utils.toLogger("debug", "setPowertate from ${device} - ${state}")
 
     HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.PowerState", state ? "BSH.Common.EnumType.PowerState.On" : "BSH.Common.EnumType.PowerState.Off") { settings ->
+        device.deviceLog("info", "Settings Sent: ${updateState}")
+    }
+}
+
+def setLighting(device, boolean state) {
+    Utils.toLogger("debug", "setAmbientLightEnabled from ${device} - ${state}")
+
+    HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.Lighting", state ? "true" : "false") { settings ->
+        device.deviceLog("info", "Settings Sent: ${updateState}")
+    }
+}
+
+def setAmbientLightEnabled(device, boolean state) {
+    Utils.toLogger("debug", "setAmbientLightEnabled from ${device} - ${state}")
+
+    HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.AmbientLightEnabled", state ? "true" : "false") { settings ->
         device.deviceLog("info", "Settings Sent: ${updateState}")
     }
 }
