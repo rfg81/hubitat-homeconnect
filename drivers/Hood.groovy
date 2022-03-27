@@ -38,9 +38,9 @@ metadata {
         capability "Initialize"
         
         command "setLighting", [[name:"Enable Lighting*", type:"ENUM", constraints:["On", "Off"]]]
-        command "setLightingBrightness", [[name:"Lighting Brightness*", description:"Lighting Brightness (values between 10 and 100)", type:"NUMBER"]]
+        command "setLightingBrightness", [[name:"Lighting Brightness*", type:"NUMBER", description:"Lighting Brightness (values between 10 and 100)"]]
         command "setAmbientLight", [[name:"Enable Ambient Light*", type:"ENUM", constraints:["On", "Off"]]]
-        command "setAmbientLightBrightness", [[name:"Ambient Light Brightness*", type:"NUMBER", description:"Lighting Brightness (values between 10 and 100)",]]
+        command "setAmbientLightBrightness", [[name:"Ambient Light Brightness*", type:"NUMBER", description:"Lighting Brightness (values between 10 and 100)"]]
         
         command "deviceLog", [[name: "Level*", type:"STRING", description: "Level of the message"], 
                               [name: "Message*", type:"STRING", description: "Message"]] 
