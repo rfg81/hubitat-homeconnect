@@ -21,6 +21,7 @@
  *  Version: 2.1 - Added LightingBrightness, Lighting and LocalControlActive attributes
  *  Version: 2.2 - Fixed LocalControlActive attribute
  *  Version: 2.3 - Tried to add lighting and ambient light commands
+ *  Version: 2.4 - Tried to add light brightness commands
  */
 
 import groovy.transform.Field
@@ -44,7 +45,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "2.3" }
+def driverVer() { return "2.4" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -294,9 +295,17 @@ def setPowertate(device, boolean state) {
 }
 
 def setLighting(device, boolean state) {
-    Utils.toLogger("debug", "setAmbientLightEnabled from ${device} - ${state}")
+    Utils.toLogger("debug", "setLighting from ${device} - ${state}")
 
     HomeConnectAPI.setSettings(device.deviceNetworkId, "Cooking.Common.Setting.Lighting", state ? "true" : "false") { settings ->
+        device.deviceLog("info", "Settings Sent: ${updateState}")
+    }
+}
+
+def setLightingBrightness(device, value) {
+    Utils.toLogger("debug", "setLightingBrightness from ${device} - ${value}")
+
+    HomeConnectAPI.setSettings(device.deviceNetworkId, "Cooking.Common.Setting.LightingBrightness", value) { settings ->
         device.deviceLog("info", "Settings Sent: ${updateState}")
     }
 }
@@ -305,6 +314,14 @@ def setAmbientLightEnabled(device, boolean state) {
     Utils.toLogger("debug", "setAmbientLightEnabled from ${device} - ${state}")
 
     HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.AmbientLightEnabled", state ? "true" : "false") { settings ->
+        device.deviceLog("info", "Settings Sent: ${updateState}")
+    }
+}
+
+def setAmbientLightBrightness(device, value) {
+    Utils.toLogger("debug", "setAmbientLightBrightness from ${device} - ${value}")
+
+    HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.AmbientLightBrightness", value) { settings ->
         device.deviceLog("info", "Settings Sent: ${updateState}")
     }
 }
