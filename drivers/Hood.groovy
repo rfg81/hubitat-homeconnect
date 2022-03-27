@@ -18,6 +18,7 @@
  *  Date: 2021-11-28
  *  Version: 1.0 - Initial commit
  *  Version: 1.1 - Added LightingBrightness, Lighting and LocalControlActive attributes
+ *  Version: 1.2 - Tried to add lighting and ambient light commands
  */
 
 import groovy.transform.Field
@@ -27,13 +28,16 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.0" }
+def driverVer() { return "1.2" }
 
 metadata {
     definition(name: "Home Connect Hood", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
         capability "Sensor"
         capability "Switch"
         capability "Initialize"
+        
+        command "setLighting", [[name:"Enable Lighting*", type:"ENUM", constraints:["On", "Off"]]]
+        command "setAmbientLight", [[name:"Enable Ambient Light*", type:"ENUM", constraints:["On", "Off"]]]
         
         command "deviceLog", [[name: "Level*", type:"STRING", description: "Level of the message"], 
                               [name: "Message*", type:"STRING", description: "Message"]] 
@@ -183,6 +187,14 @@ metadata {
             input name: "logLevel", title: "Log Level", type: "enum", options: LOG_LEVELS, defaultValue: DEFAULT_LOG_LEVEL, required: false
         }
     }
+}
+
+def setLighting(state) {
+    parent.setLighting(device, state == "On" ? true : false)
+}
+
+def setAmbientLight(state) {
+    parent.setAmbientLightEnabled(device, state == "On" ? true : false)
 }
 
 void startProgram() {
