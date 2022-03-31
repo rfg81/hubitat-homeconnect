@@ -20,6 +20,7 @@
  *  Version: 1.1 - Added LightingBrightness, Lighting and LocalControlActive attributes
  *  Version: 1.2 - Tried to add lighting and ambient light commands
  *  Version: 1.3 - Tried to add light brightness commands
+ *  Version: 1.4 - Removed unsupported light commands
  */
 
 import groovy.transform.Field
@@ -29,7 +30,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.3" }
+def driverVer() { return "1.4" }
 
 metadata {
     definition(name: "Home Connect Hood", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
@@ -39,8 +40,6 @@ metadata {
         
         command "setLighting", [[name:"Enable Lighting*", type:"ENUM", constraints:["On", "Off"]]]
         command "setLightingBrightness", [[name:"Lighting Brightness*", type:"NUMBER", description:"Lighting Brightness (values between 10 and 100)"]]
-        command "setAmbientLight", [[name:"Enable Ambient Light*", type:"ENUM", constraints:["On", "Off"]]]
-        command "setAmbientLightBrightness", [[name:"Ambient Light Brightness*", type:"NUMBER", description:"Lighting Brightness (values between 10 and 100)"]]
         
         command "deviceLog", [[name: "Level*", type:"STRING", description: "Level of the message"], 
                               [name: "Message*", type:"STRING", description: "Message"]] 
@@ -200,15 +199,6 @@ def setLightingBrightness(BigDecimal value, BigDecimal min = 10, BigDecimal max 
     value = (int)Math.min(Math.max(value, min), max)
     Utils.toLogger("debug", "setLightingBrightness: ${value}")
     parent.setLightingBrightness(device, value)
-}
-
-def setAmbientLight(state) {
-    parent.setAmbientLightEnabled(device, state == "On" ? true : false)
-}
-
-def setAmbientLightBrightness(BigDecimal value, BigDecimal min = 10, BigDecimal max = 100) {
-    value = (int)Math.min(Math.max(value, min), max)
-    parent.setAmbientLightBrightness(device, value)
 }
 
 void startProgram() {
