@@ -17,6 +17,7 @@
  *  Author: Rangner Ferraz Guimaraes (rferrazguimaraes)
  *  Date: 2021-11-28
  *  Version: 1.0 - Initial commit
+ *  Version: 1.1 - Removed unnecessary information for device 
  */
 
 import groovy.transform.Field
@@ -31,7 +32,7 @@ def driverVer() { return "1.0" }
 metadata {
     definition(name: "Home Connect FridgeFreezer", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
         capability "Sensor"
-        capability "Switch"
+        //capability "Switch"
         capability "ContactSensor"
         capability "Initialize"
         
@@ -39,27 +40,27 @@ metadata {
                               [name: "Message*", type:"STRING", description: "Message"]] 
         //command "connectEventStream"
         //command "disconnectEventStream"
-        command "startProgram"
-        command "stopProgram"
+        //command "startProgram"
+        //command "stopProgram"
         //command "reset"
 
-        attribute "AvailableProgramsList", "JSON_OBJECT"
-        attribute "AvailableOptionsList", "JSON_OBJECT"
+        //attribute "AvailableProgramsList", "JSON_OBJECT"
+        //attribute "AvailableOptionsList", "JSON_OBJECT"
 
         // BSH.Common.Status.RemoteControlActive
         // This status indicates whether the allowance for remote controlling is enabled.
-        attribute "RemoteControlActive", "enum", ["true", "true"]
+        //attribute "RemoteControlActive", "enum", ["true", "true"]
 
         // BSH.Common.Status.RemoteControlStartAllowed
         // This status indicates whether the remote program start is enabled. 
         // This can happen due to a programmatic change (only disabling), 
         // or manually by the user changing the flag locally on the home appliance, 
         // or automatically after a certain duration - usually 24 hours.
-        attribute "RemoteControlStartAllowed", "enum", ["true", "false"]
+        //attribute "RemoteControlStartAllowed", "enum", ["true", "false"]
 
         // BSH.Common.Status.OperationState
         // This status describes the operation state of the home appliance. 
-        attribute "OperationState", "enum", [
+        /*attribute "OperationState", "enum", [
             // Key: BSH.Common.EnumType.OperationState.Inactive
             // Description: Home appliance is inactive. It could be switched off or in standby.
             "Inactive",
@@ -95,7 +96,7 @@ metadata {
             // Key: BSH.Common.EnumType.OperationState.Aborting
             // Description: The active program is currently aborting.
             "Aborting",
-        ]
+        ]*/
 
         // BSH.Common.Status.DoorState
         // This status describes the state of the door of the home appliance. 
@@ -120,8 +121,8 @@ metadata {
             "Locked",
         ]
 
-        attribute "ActiveProgram", "string"
-        attribute "SelectedProgram", "string"        
+        //attribute "ActiveProgram", "string"
+        //attribute "SelectedProgram", "string"        
 
         attribute "PowerState", "enum", [
             // Key: BSH.Common.EnumType.PowerState.Off
@@ -161,7 +162,7 @@ metadata {
     
     preferences {
         section { // General
-            List<String> availableProgramsList = getAvailableProgramsList()
+            /*List<String> availableProgramsList = getAvailableProgramsList()
             if(availableProgramsList.size() != 0)
             {
                 input name:"selectedProgram", type:"enum", title: "Select Program", options:availableProgramsList
@@ -172,14 +173,14 @@ metadata {
                 String titleName = availableOptionList[i]
                 String optionName = titleName.replaceAll("\\s","")
                 input name:optionName, type:"bool", title: "${titleName}", defaultValue: false 
-            }
+            }*/
 
             input name: "logLevel", title: "Log Level", type: "enum", options: LOG_LEVELS, defaultValue: DEFAULT_LOG_LEVEL, required: false
         }
     }
 }
 
-void startProgram() {
+/*void startProgram() {
     if(selectedProgram != null) {
         def programToSelect = state.foundAvailablePrograms.find { it.name == selectedProgram }
         if(programToSelect) {
@@ -190,7 +191,7 @@ void startProgram() {
 
 void stopProgram() {
     parent.stopProgram(device);
-}
+}*/
 
 void initialize() {
     Utils.toLogger("debug", "initialize()")
@@ -217,7 +218,7 @@ void uninstalled() {
     disconnectEventStream()
 }
 
-void setCurrentProgram() {
+/*void setCurrentProgram() {
     // set current program
     if(selectedProgram != null) {
         def programToSelect = state.foundAvailablePrograms.find { it.name == selectedProgram }
@@ -262,13 +263,6 @@ void updateAvailableOptionsList() {
     sendEvent(name:"AvailableOptionsList", value: [], displayed: false)
 }
 
-void reset() {    
-    Utils.toLogger("debug", "reset")
-    unschedule()
-    sendEvent(name: "EventStreamStatus", value: "disconnected", displayed: true, isStateChange: true)
-    disconnectEventStream()
-}
-
 List<String> getAvailableProgramsList() {
     String json = device?.currentValue("AvailableProgramsList")
     if (json != null) {
@@ -292,11 +286,19 @@ def on() {
 def off() {
     parent.setPowertate(device, false)
 }
+*/
+
+void reset() {    
+    Utils.toLogger("debug", "reset")
+    unschedule()
+    sendEvent(name: "EventStreamStatus", value: "disconnected", displayed: true, isStateChange: true)
+    disconnectEventStream()
+}
 
 void intializeStatus() {
     Utils.toLogger("debug", "Initializing the status of the device")
 
-    parent.intializeStatus(device)
+    parent.intializeStatus(device, false)
     
     try {
         disconnectEventStream()
