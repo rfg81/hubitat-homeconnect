@@ -22,6 +22,7 @@
  *  Version: 2.2 - Fixed LocalControlActive attribute
  *  Version: 2.3 - Tried to add lighting and ambient light commands
  *  Version: 2.4 - Tried to add light brightness commands
+ *  Version: 2.5 - Exposed more info when there is an error 
  */
 
 import groovy.transform.Field
@@ -45,7 +46,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "2.4" }
+def driverVer() { return "2.5" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -243,7 +244,7 @@ def homeConnectIdToDeviceNetworkId(haId) {
     return "${haId}"
 }
 
-def intializeStatus(device) {
+def intializeStatus(device, boolean checkActiveProgram = true) {
     def haId = device.deviceNetworkId
     
     Utils.toLogger("info", "Initializing the status of the device ${haId}")
@@ -257,15 +258,17 @@ def intializeStatus(device) {
         processMessage(device, settings);
     }
 
-    try {
-        HomeConnectAPI.getActiveProgram(haId) { activeProgram ->
-            device.deviceLog("info", "ActiveProgram received: ${activeProgram}")
-            processMessage(device, activeProgram);
-        }
-    } catch (Exception e) {
-        // no active program
-        if(device.getDataValue("ActiveProgram") != "") {
-            device.sendEvent(name: "ActiveProgram", value: "newStat", descriptionText: "Active Program changed to: ${newStat}", displayed: true, isStateChange: true)
+    if(checkActiveProgram) {
+        try {
+            HomeConnectAPI.getActiveProgram(haId) { activeProgram ->
+                device.deviceLog("info", "ActiveProgram received: ${activeProgram}")
+                processMessage(device, activeProgram);
+            }
+        } catch (Exception e) {
+            // no active program
+            if(device.getDataValue("ActiveProgram") != "") {
+                device.sendEvent(name: "ActiveProgram", value: "newStat", descriptionText: "Active Program changed to: ${newStat}", displayed: true, isStateChange: true)
+            }
         }
     }
 }
@@ -290,7 +293,7 @@ def setPowertate(device, boolean state) {
     Utils.toLogger("debug", "setPowertate from ${device} - ${state}")
 
     HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.PowerState", state ? "BSH.Common.EnumType.PowerState.On" : "BSH.Common.EnumType.PowerState.Off") { settings ->
-        device.deviceLog("info", "Settings Sent: ${updateState}")
+        device.deviceLog("info", "Settings Sent: ${settings}")
     }
 }
 
@@ -298,7 +301,7 @@ def setLighting(device, boolean state) {
     Utils.toLogger("debug", "setLighting from ${device} - ${state}")
 
     HomeConnectAPI.setSettings(device.deviceNetworkId, "Cooking.Common.Setting.Lighting", state ? "true" : "false") { settings ->
-        device.deviceLog("info", "Settings Sent: ${updateState}")
+        device.deviceLog("info", "Settings Sent: ${settings}")
     }
 }
 
@@ -306,7 +309,7 @@ def setLightingBrightness(device, value) {
     Utils.toLogger("debug", "setLightingBrightness from ${device} - ${value}")
 
     HomeConnectAPI.setSettings(device.deviceNetworkId, "Cooking.Common.Setting.LightingBrightness", value) { settings ->
-        device.deviceLog("info", "Settings Sent: ${updateState}")
+        device.deviceLog("info", "Settings Sent: ${settings}")
     }
 }
 
@@ -314,7 +317,7 @@ def setAmbientLightEnabled(device, boolean state) {
     Utils.toLogger("debug", "setAmbientLightEnabled from ${device} - ${state}")
 
     HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.AmbientLightEnabled", state ? "true" : "false") { settings ->
-        device.deviceLog("info", "Settings Sent: ${updateState}")
+        device.deviceLog("info", "Settings Sent: ${settings}")
     }
 }
 
@@ -322,7 +325,7 @@ def setAmbientLightBrightness(device, value) {
     Utils.toLogger("debug", "setAmbientLightBrightness from ${device} - ${value}")
 
     HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.AmbientLightBrightness", value) { settings ->
-        device.deviceLog("info", "Settings Sent: ${updateState}")
+        device.deviceLog("info", "Settings Sent: ${settings}")
     }
 }
 
@@ -731,16 +734,27 @@ def HomeConnectAPI_create(Map params = [:]) {
     }
 
      def apiGet = { path, closure ->
-        Utils.toLogger("debug", "API Get Request to Home Connect with path $path")
-        return httpGet(uri: apiUrl,
-                'path': path,
-                'headers': authHeaders()) { response -> 
-            closure.call(json.parseText(response.data.text));
+        Utils.toLogger("debug", "API Get Request to Home Connect - path: $path")
+        try {
+            return httpGet(uri: apiUrl,
+                           'path': path,
+                           'headers': authHeaders()) { response -> 
+                closure.call(json.parseText(response.data.text));
+            }
+        } catch (groovyx.net.http.HttpResponseException e) {
+            if(path.contains('programs/active')) {
+                // exception case when there is no program active at the moment so just ignore the error here and handle it inside the method intializeStatus
+                throw new Exception("\"${path}\"")
+            } else {
+                Utils.toLogger("error", "apiGet HttpResponseException - error: ${e.getResponse().getData()} - path: ${path}")
+            }            
+        } catch (e)	{
+            Utils.toLogger("error", "apiGet - error: ${e} - path: ${path}")
         }
     };
-
+         
     def apiPut = { path, data, closure ->
-        Utils.toLogger("debug", "API Put Request to Home Connect with path ${path}")
+        Utils.toLogger("debug", "API Put Request to Home Connect - path: ${path}")
         Utils.toLogger("debug", "API Put original - ${data}")
         String body = new groovy.json.JsonBuilder(data).toString()
         Utils.toLogger("debug", "API Put Converted - ${body}")
@@ -758,28 +772,30 @@ def HomeConnectAPI_create(Map params = [:]) {
                     closure.call(json.parseText(response.data.text));
                 }
             }
-        } catch (Exception e) {
-            Utils.toLogger("error", "Error apiPut - ${e}")
+        } catch (groovyx.net.http.HttpResponseException e) {
+            Utils.toLogger("error", "apiPut HttpResponseException - error: ${e.getResponse().getData()} - path: ${path}")
+        } catch (e)	{
+            Utils.toLogger("error", "apiPut - error: ${e} - path: ${path}")
         }
     };
 
     def apiDelete = { path, closure ->
-        Utils.toLogger("debug", "API Delete Request to Home Connect with path ${path}")
+        Utils.toLogger("debug", "API Delete Request to Home Connect - path: ${path}")
         
         try {
             return httpDelete(uri: apiUrl,
                               'path': path,
                               'headers': authHeaders()) { response -> 
-                if (response.status == 200) {
-                    Utils.toLogger("debug", "API Delete response - ${response.data}")
-                    if(response.data && response.data.text)
-                    {
-                        closure.call(json.parseText(response.data.text));
-                    }
+                Utils.toLogger("debug", "API Delete response - ${response.data}")
+                if(response.data && response.data.text)
+                {
+                    closure.call(json.parseText(response.data.text));
                 }
             }
-        } catch (Exception e) {
-            Utils.toLogger("error", "Error apiDelete - ${e}")
+        } catch (groovyx.net.http.HttpResponseException e) {
+            Utils.toLogger("error", "apiDelete HttpResponseException - error: ${e.getResponse().getData()} - path: ${path}")
+        } catch (e)	{
+            Utils.toLogger("error", "apiDelete - error: ${e} - path: ${path}")
         }
     };
 
