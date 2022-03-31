@@ -23,6 +23,7 @@
  *  Version: 2.3 - Tried to add lighting and ambient light commands
  *  Version: 2.4 - Tried to add light brightness commands
  *  Version: 2.5 - Exposed more info when there is an error 
+ *  Version: 2.6 - Fixed httpGet and httPut calls
  */
 
 import groovy.transform.Field
@@ -46,7 +47,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "2.5" }
+def driverVer() { return "2.6" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -730,16 +731,20 @@ def HomeConnectAPI_create(Map params = [:]) {
     def json = new JsonSlurper();
 
     def authHeaders = {
-        return ['Authorization': "Bearer ${oAuthTokenFactory()}", 'Accept-Language': "${language()}", 'accept': "application/vnd.bsh.sdk.v1+json"]
+        return ['Authorization': "Bearer ${oAuthTokenFactory()}", 'Accept-Language': "${language()}", 'accept': "application/vnd.bsh.sdk.v1+json", 'Accept-Encoding': 'plain']
     }
 
      def apiGet = { path, closure ->
-        Utils.toLogger("debug", "API Get Request to Home Connect - path: $path")
+        Utils.toLogger("debug", "API Get Request to Home Connect - uri: ${apiUrl + path}")
         try {
-            return httpGet(uri: apiUrl,
-                           'path': path,
+            return httpGet(uri: apiUrl + path,
+                           contentType: "application/json",
                            'headers': authHeaders()) { response -> 
-                closure.call(json.parseText(response.data.text));
+                Utils.toLogger("debug", "API Get response.data - ${response.data}")
+                if(response.data)
+                {
+                    closure(response.data);
+                }
             }
         } catch (groovyx.net.http.HttpResponseException e) {
             if(path.contains('programs/active')) {
@@ -754,22 +759,21 @@ def HomeConnectAPI_create(Map params = [:]) {
     };
          
     def apiPut = { path, data, closure ->
-        Utils.toLogger("debug", "API Put Request to Home Connect - path: ${path}")
+        Utils.toLogger("debug", "API Put Request to Home Connect - uri: ${apiUrl + path}")
         Utils.toLogger("debug", "API Put original - ${data}")
         String body = new groovy.json.JsonBuilder(data).toString()
-        Utils.toLogger("debug", "API Put Converted - ${body}")
+        Utils.toLogger("debug", "API Put converted - ${body}")
     
         try {
-            return httpPut(uri: apiUrl,
-                           path: path,
+            return httpPut(uri: apiUrl + path,
                            contentType: "application/json",
                            requestContentType: 'application/json',
                            body: body,
                            headers: authHeaders()) { response -> 
                 Utils.toLogger("debug", "API Put response.data - ${response.data}")
-                if(response.data && response.data.text)
+                if(response.data)
                 {
-                    closure.call(json.parseText(response.data.text));
+                    closure(response.data);
                 }
             }
         } catch (groovyx.net.http.HttpResponseException e) {
@@ -780,16 +784,15 @@ def HomeConnectAPI_create(Map params = [:]) {
     };
 
     def apiDelete = { path, closure ->
-        Utils.toLogger("debug", "API Delete Request to Home Connect - path: ${path}")
+        Utils.toLogger("debug", "API Delete Request to Home Connect - uri: ${apiUrl + path}")
         
         try {
-            return httpDelete(uri: apiUrl,
-                              'path': path,
+            return httpDelete(uri: apiUrl + path,
                               'headers': authHeaders()) { response -> 
-                Utils.toLogger("debug", "API Delete response - ${response.data}")
-                if(response.data && response.data.text)
+                Utils.toLogger("debug", "API Delete response.data - ${response.data}")
+                if(response.data)
                 {
-                    closure.call(json.parseText(response.data.text));
+                    closure(response.data);
                 }
             }
         } catch (groovyx.net.http.HttpResponseException e) {
