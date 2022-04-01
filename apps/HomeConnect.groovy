@@ -24,6 +24,7 @@
  *  Version: 2.4 - Tried to add light brightness commands
  *  Version: 2.5 - Exposed more info when there is an error 
  *  Version: 2.6 - Fixed httpGet and httPut calls
+ *  Version: 2.7 - Fixed some http calls
  */
 
 import groovy.transform.Field
@@ -47,7 +48,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "2.6" }
+def driverVer() { return "2.7" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -731,7 +732,7 @@ def HomeConnectAPI_create(Map params = [:]) {
     def json = new JsonSlurper();
 
     def authHeaders = {
-        return ['Authorization': "Bearer ${oAuthTokenFactory()}", 'Accept-Language': "${language()}", 'accept': "application/vnd.bsh.sdk.v1+json", 'Accept-Encoding': 'plain']
+        return ['Authorization': "Bearer ${oAuthTokenFactory()}", 'Accept-Language': "${language()}", 'accept': "application/vnd.bsh.sdk.v1+json"]
     }
 
      def apiGet = { path, closure ->
@@ -788,7 +789,9 @@ def HomeConnectAPI_create(Map params = [:]) {
         
         try {
             return httpDelete(uri: apiUrl + path,
-                              'headers': authHeaders()) { response -> 
+                           contentType: "application/json",
+                           requestContentType: 'application/json',
+                           headers: authHeaders()) { response -> 
                 Utils.toLogger("debug", "API Delete response.data - ${response.data}")
                 if(response.data)
                 {
