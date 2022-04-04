@@ -17,6 +17,7 @@
  *  Author: Rangner Ferraz Guimaraes (rferrazguimaraes)
  *  Date: 2021-11-28
  *  Version: 1.0 - Initial commit
+ *  Version: 1.1 - Added better handling of STOP events from event stream
  */
 
 import groovy.transform.Field
@@ -26,7 +27,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.0" }
+def driverVer() { return "1.1" }
 
 metadata {
     definition(name: "Home Connect CoffeeMaker", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
@@ -356,18 +357,20 @@ void eventStreamStatus(String text) {
     def (String type, String message) = text.split(':', 2)
     switch (type) {    
         case 'START':
+            atomicState.oStartTokenExpires = now() + 60_000 // 60 seconds
             setEventStreamStatusToConnected()
-            //Utils.toLogger("info", "Event Stream connected")
-            break
-        
+            break        
         case 'STOP':
-            Utils.toLogger("debug", "eventStreamDisconnectGracePeriod: ${eventStreamDisconnectGracePeriod}")
-            runIn(eventStreamDisconnectGracePeriod, "setEventStreamStatusToDisconnected")
-            //Utils.toLogger("info", "Event Stream disconnected")
+            if(now() >= atomicState.oStartTokenExpires) { // stream started recently so check if we need to ignore any STOP event
+                Utils.toLogger("debug", "eventStreamDisconnectGracePeriod: ${eventStreamDisconnectGracePeriod}")
+                runIn(eventStreamDisconnectGracePeriod, "setEventStreamStatusToDisconnected")
+            } else {
+                Utils.toLogger("debug", "stream started recently so ignore STOP event")
+            }
             break
-
         default:
             Utils.toLogger("error", "Received unhandled Event Stream status message: ${text}")
+            atomicState.oStartTokenExpires = now()
             runIn(eventStreamDisconnectGracePeriod, "setEventStreamStatusToDisconnected")
             break
     }
