@@ -25,6 +25,7 @@
  *  Version: 2.5 - Exposed more info when there is an error 
  *  Version: 2.6 - Fixed httpGet and httPut calls
  *  Version: 2.7 - Added support to raw event stream (rawStream), fixed bool SetSettings, fixed OperationState message
+ *  Version: 2.8 - Fixed setting a Setting again
  */
 
 import groovy.transform.Field
@@ -48,7 +49,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "2.7" }
+def driverVer() { return "2.8" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -1318,7 +1319,7 @@ def HomeConnectAPI_create(Map params = [:]) {
 
     instance.setSettings = { haId, settingsKey, value, closure ->
         Utils.toLogger("info", "Set the setting '${settingsKey}' of Home Appliance '$haId' from Home Connect")
-        apiPut("${ENDPOINT_APPLIANCES()}/${haId}/settings/${settingsKey}", [data: [key: "${settingsKey}", value: "${value}"]]) { response ->
+        apiPut("${ENDPOINT_APPLIANCES()}/${haId}/settings/${settingsKey}", [data: [key: "${settingsKey}", value: value]]) { response ->
             closure.call(response.data)
         }
     };
