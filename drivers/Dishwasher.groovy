@@ -28,7 +28,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "2.0" }
+def driverVer() { return "2.1" }
 
 metadata {
     definition(name: "Home Connect Dishwasher", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
