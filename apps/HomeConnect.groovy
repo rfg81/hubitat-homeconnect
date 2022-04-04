@@ -24,7 +24,7 @@
  *  Version: 2.4 - Tried to add light brightness commands
  *  Version: 2.5 - Exposed more info when there is an error 
  *  Version: 2.6 - Fixed httpGet and httPut calls
- *  Version: 2.7 - Fixed some http calls
+ *  Version: 2.7 - Added support to raw event stream (rawStream), fixed bool SetSettings, fixed OperationState message
  */
 
 import groovy.transform.Field
@@ -302,7 +302,7 @@ def setPowertate(device, boolean state) {
 def setLighting(device, boolean state) {
     Utils.toLogger("debug", "setLighting from ${device} - ${state}")
 
-    HomeConnectAPI.setSettings(device.deviceNetworkId, "Cooking.Common.Setting.Lighting", state ? "true" : "false") { settings ->
+    HomeConnectAPI.setSettings(device.deviceNetworkId, "Cooking.Common.Setting.Lighting", state) { settings ->
         device.deviceLog("info", "Settings Sent: ${settings}")
     }
 }
@@ -318,7 +318,7 @@ def setLightingBrightness(device, value) {
 def setAmbientLightEnabled(device, boolean state) {
     Utils.toLogger("debug", "setAmbientLightEnabled from ${device} - ${state}")
 
-    HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.AmbientLightEnabled", state ? "true" : "false") { settings ->
+    HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.AmbientLightEnabled", state) { settings ->
         device.deviceLog("info", "Settings Sent: ${settings}")
     }
 }
@@ -374,7 +374,7 @@ def setSelectedProgramOption(device, optionKey, optionValue) {
     }
 }
 
-def processMessage(device, ArrayList textArrayList) {
+def processMessage(device, final ArrayList textArrayList) {
     Utils.toLogger("debug", "processMessage from ${device} message array list: ${textArrayList}")
 
     if (textArrayList == null || textArrayList.isEmpty()) { 
@@ -392,8 +392,9 @@ def processMessage(device, ArrayList textArrayList) {
     processMessage(device, text);
 }
 
-def processMessage(device, String text) {
-    Utils.toLogger("debug", "processMessage from ${device} message: ${text}")
+def processMessage(device, final String originalText) {
+    Utils.toLogger("debug", "processMessage from ${device} message: ${originalText}")
+    String text = originalText
     
     // EventStream is documented here
     //  https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format
@@ -404,38 +405,12 @@ def processMessage(device, String text) {
         return
     }
     
-    if(text.contains('items')) {
-        if(!text.contains('data:')) {
-            text = "data:" + text
-        }       
-    } else {        
-        if(text.contains('{')) {
-            messageBuffer += text
-            messageScopeCount += 1
-            device.deviceLog("debug", "text contains { - messageScopeCount:${messageScopeCount} - messageBuffer:  ${messageBuffer}")            
-            return // message not finished yet
-        } else if(text.contains('}')) {
-            messageBuffer += text
-            messageScopeCount -= 1
-            device.deviceLog("debug", "text contains } - messageScopeCount:${messageScopeCount} - messageBuffer: ${messageBuffer}")
-            if(messageScopeCount == 0) { // message finished
-                if(messageBuffer.contains('error'))
-                {
-                    text = "error:" + messageBuffer
-                }
-                device.deviceLog("debug", "messageBuffer complet: ${messageBuffer}")         
-                device.deviceLog("debug", "text complet: ${text}")
-            } else {
-                return // message not finished yet
-            }
-        } else if(!messageBuffer.isEmpty()) {
-            messageBuffer += text
-            device.deviceLog("debug", "message buffer concat - messageScopeCount:${messageScopeCount} - messageBuffer: ${messageBuffer}")
-            return // message not finished yet
-        }
-    }
-    
-    messageBuffer = ""
+    if(text.contains('error')) {
+        def jsonMap = new JsonSlurper().parseText(text)
+        //Utils.toLogger("debug", "jsonMap: ${jsonMap}")
+        text = jsonMap.toMapString().replaceAll("^\\[|\\]\$", "")
+        //Utils.toLogger("debug", "text: ${text}")
+    } 
     
     // Parse the lines of data.  Expected types are: event, data, id, retry -- all other fields ignored.
     def (String type, String message) = text.split(':', 2)
@@ -457,6 +432,21 @@ def processMessage(device, String text) {
 
         case 'event':
             device.deviceLog("debug", "Received event: ${message}")
+            def result = text.replaceAll("(^[\\r\\n]+|[\\r\\n]+\$)", "");
+            //device.deviceLog("debug", "result: ${result}")
+            ArrayList linesAllEntries = result.split('\n')
+            //device.deviceLog("debug", "lines: ${lines}")
+            def mapAllEntries = linesAllEntries.collectEntries { entry ->
+                def pair = entry.split(':', 2)
+                [(pair.first()): pair.last()]
+            }
+            //device.deviceLog("debug", "mapAllEntries: ${mapAllEntries}")
+            def mapConverted = [:]
+            Map.Entry<String, String> entry = mapAllEntries.entrySet().iterator().next();
+            def keys = mapAllEntries.findAll { it.key != entry.getKey() }.collect { it.key }
+            mapConverted.put(entry.getValue(), mapAllEntries.subMap(keys))
+            //device.deviceLog("debug", "mapConverted: ${mapConverted}")
+            processData(device, mapConverted)        
             break
 
         case 'retry':
@@ -464,21 +454,22 @@ def processMessage(device, String text) {
             break
 
         case 'error':
-            device.deviceLog("error", "Received error: ${message}")
-            def result = new JsonSlurper().parseText(message)
-            //device.deviceLog("error", "result: ${result}")
-            processData(device, result)
+            device.deviceLog("debug", "Received error: ${message}")
+            def jsonMap = new JsonSlurper().parseText(originalText)
+            processData(device, jsonMap)
             break
 
         default:
             device.deviceLog("debug", "Received unknown data: ${text}")
+            break
     }    
 }
 
-def processData(device, data) {
+def processData(device, final data) {
     Utils.toLogger("debug", "processData: ${device} - ${data}")
 
-    //if(data instanceof ArrayList) {
+    if(data instanceof ArrayList) {
+        //Utils.toLogger("debug", "It's an ArrayList")
         data.each {
             switch(it.key) {
                 case "BSH.Common.Root.ActiveProgram":
@@ -493,7 +484,7 @@ def processData(device, data) {
                     device.sendEvent(name: "contact", value: "${it.displayvalue?.toLowerCase()}")
                 break
                 case "BSH.Common.Status.OperationState":
-                    device.sendEvent(name: "OperationState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
+                    device.sendEvent(name: "OperationState", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
                 break
                 case "BSH.Common.Status.LocalControlActive":
                     device.sendEvent(name: "LocalControlActive", value: "${it.value}", displayed: true, isStateChange: true)
@@ -585,16 +576,33 @@ def processData(device, data) {
                 break
             }
         }
-/*    } else if(data instanceof Map) {
-        Utils.toLogger("debug", "It's a Map!")
+    } else if(data instanceof Map) {
+        //Utils.toLogger("debug", "It's a Map")
         data.each {
             switch(it.key) {
+                case "KEEP-ALIVE":
+                case "STATUS":
+                case "EVENT":
+                case "NOTIFY":
+                case "CONNECTED":
+                case "DISCONNECTED":
+                case "PAIRED":
+                case "DEPAIRED":                
+                    device.deviceLog("info", "Event: ${it.key} - ${it.value}")
+                break
+                case "error":
+                    if(it.value instanceof Map) {
+                        device.deviceLog("error", "Error ${Utils.convertErrorMessageTime(it.value.toMapString())replaceAll("^\\[|\\]\$", "")}")
+                    } else {
+                        device.deviceLog("error", "Error: ${it.value}")
+                    }
+                break
                 default:
-                    device.deviceLog("debug", "Not supported: (${it})")
+                    device.deviceLog("debug", "Not supported: ${it.key} - ${it.value}")
                 break
             }
         }
-    }*/
+    }
 }
 
 //TODO: Move out into helper library
@@ -764,11 +772,11 @@ def HomeConnectAPI_create(Map params = [:]) {
         Utils.toLogger("debug", "API Put original - ${data}")
         String body = new groovy.json.JsonBuilder(data).toString()
         Utils.toLogger("debug", "API Put converted - ${body}")
-    
+
         try {
             return httpPut(uri: apiUrl + path,
                            contentType: "application/json",
-                           requestContentType: 'application/json',
+                           requestContentType: "application/json",
                            body: body,
                            headers: authHeaders()) { response -> 
                 Utils.toLogger("debug", "API Put response.data - ${response.data}")
@@ -790,7 +798,7 @@ def HomeConnectAPI_create(Map params = [:]) {
         try {
             return httpDelete(uri: apiUrl + path,
                            contentType: "application/json",
-                           requestContentType: 'application/json',
+                           requestContentType: "application/json",
                            headers: authHeaders()) { response -> 
                 Utils.toLogger("debug", "API Delete response.data - ${response.data}")
                 if(response.data)
@@ -1310,26 +1318,10 @@ def HomeConnectAPI_create(Map params = [:]) {
 
     instance.setSettings = { haId, settingsKey, value, closure ->
         Utils.toLogger("info", "Set the setting '${settingsKey}' of Home Appliance '$haId' from Home Connect")
-        //Utils.toLogger("info", "Test: ${new groovy.json.JsonBuilder([data: [key: "${settingsKey}", value: "${value}"]]).toString()}")
-        
-        //def updatedState = [:]
-        //updatedState.put("key", settingsKey);
-        //updatedState.put("value", value);
-        //"{\"data\": {\"key\": ${settingsKey}, \"value\": ${value}}}"
-        //String wrapper = "{\"data\":" + desiredState + "}";
-         //{"data":{"key":"BSH.Common.Setting.PowerState","value":"BSH.Common.EnumType.PowerState.On"}}
         apiPut("${ENDPOINT_APPLIANCES()}/${haId}/settings/${settingsKey}", [data: [key: "${settingsKey}", value: "${value}"]]) { response ->
             closure.call(response.data)
         }
     };
-        
-    /*instance.setSettings = { haId, settingsKey, value, closure ->
-        Utils.toLogger("info", "Set the setting '${settingsKey}' of Home Appliance '$haId' from Home Connect")
-        apiPut("${ENDPOINT_APPLIANCES()}/${haId}/settings/${settingsKey}", "{\"data\": {\"key\": ${settingsKey}, \"value\": ${value}}}") { response ->
-            closure.call(response.data)
-        }
-    };*/        
-
 
     /**
      * Get stream of events for one appliance
@@ -1342,6 +1334,7 @@ def HomeConnectAPI_create(Map params = [:]) {
         interfaces.eventStream.connect(
             "${apiUrl}${ENDPOINT_APPLIANCES()}/${haId}/events",
             [rawData: true,
+             rawStream: true,
              ignoreSSLIssues: true,
              headers: ([ 'Accept': 'text/event-stream' ] << authHeaders())])
     };
@@ -1366,6 +1359,7 @@ def HomeConnectAPI_create(Map params = [:]) {
         interfaces.eventStream.connect(
             "${apiUrl}/api/homeappliances/events",
             [rawData: true,
+             rawStream: true,
              ignoreSSLIssues: true,
              headers: ([ 'Accept': 'text/event-stream' ] << authHeaders())])
     };
