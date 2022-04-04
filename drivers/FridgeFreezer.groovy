@@ -19,6 +19,7 @@
  *  Version: 1.0 - Initial commit
  *  Version: 1.1 - Removed unnecessary information for device
  *  Version: 1.2 - Fixed program errors
+ *  Version: 1.3 - Added better handling of STOP events from event stream
  */
 
 import groovy.transform.Field
@@ -28,7 +29,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.2" }
+def driverVer() { return "1.3" }
 
 metadata {
     definition(name: "Home Connect FridgeFreezer", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
