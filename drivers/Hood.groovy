@@ -22,6 +22,7 @@
  *  Version: 1.3 - Tried to add light brightness commands
  *  Version: 1.4 - Removed unsupported light commands
  *  Version: 1.5 - Added better handling of STOP events from event stream
+ *  Version: 1.6 - Added venting and intensive level support
  */
 
 import groovy.transform.Field
@@ -41,6 +42,8 @@ metadata {
         
         command "setLighting", [[name:"Enable Lighting*", type:"ENUM", constraints:["On", "Off"]]]
         command "setLightingBrightness", [[name:"Lighting Brightness*", type:"NUMBER", description:"Lighting Brightness (values between 10 and 100)"]]
+        command "setVentingLevel", [[name:"Venting Level*", type:"ENUM", constraints:["FanOff", "FanStage01", "FanStage02", "FanStage03", "FanStage04", "FanStage05"]]]
+        command "setIntensiveLevel", [[name:"Intensive Level*", type:"ENUM", constraints:["IntensiveStageOff", "IntensiveStage1", "IntensiveStage2"]]]
         
         command "deviceLog", [[name: "Level*", type:"STRING", description: "Level of the message"], 
                               [name: "Message*", type:"STRING", description: "Message"]] 
@@ -49,6 +52,7 @@ metadata {
         command "startProgram"
         command "stopProgram"
         //command "reset"
+        command "optionsList"
 
         attribute "AvailableProgramsList", "JSON_OBJECT"
         attribute "AvailableOptionsList", "JSON_OBJECT"
@@ -198,8 +202,16 @@ def setLighting(state) {
 
 def setLightingBrightness(BigDecimal value, BigDecimal min = 10, BigDecimal max = 100) {
     value = (int)Math.min(Math.max(value, min), max)
-    Utils.toLogger("debug", "setLightingBrightness: ${value}")
+    //Utils.toLogger("debug", "setLightingBrightness: ${value}")
     parent.setLightingBrightness(device, value)
+}
+
+def setVentingLevel(level) {
+    parent.setVentingLevel(device, level)
+}
+
+def setIntensiveLevel(level) {
+    parent.setIntensiveLevel(device, level)
 }
 
 void startProgram() {
@@ -285,7 +297,17 @@ void updateAvailableOptionsList() {
     sendEvent(name:"AvailableOptionsList", value: [], displayed: false)
 }
 
-void reset() {    
+void optionsList() {
+    Utils.toLogger("debug", "optionsList")
+    
+    def VentingLevels = parent.getActiveProgramOption(device, "Cooking.Common.Option.Hood.VentingLevel")
+    Utils.toLogger("debug", "VentingLevels: ${VentingLevels}")
+
+    def IntensiveLevels = parent.getActiveProgramOption(device, "Cooking.Common.Option.Hood.IntensiveLevel")
+    Utils.toLogger("debug", "IntensiveLevels: ${IntensiveLevels}")
+}
+
+void reset() {
     Utils.toLogger("debug", "reset")
     unschedule()
     sendEvent(name: "EventStreamStatus", value: "disconnected", displayed: true, isStateChange: true)
