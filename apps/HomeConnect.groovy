@@ -26,6 +26,7 @@
  *  Version: 2.6 - Fixed httpGet and httPut calls
  *  Version: 2.7 - Added support to raw event stream (rawStream), fixed bool SetSettings, fixed OperationState message
  *  Version: 2.8 - Fixed setting a Setting again
+ *  Version: 2.9 - Added venting and intensive level support
  */
 
 import groovy.transform.Field
@@ -49,7 +50,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "2.8" }
+def driverVer() { return "2.9" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -330,6 +331,33 @@ def setAmbientLightBrightness(device, value) {
     HomeConnectAPI.setSettings(device.deviceNetworkId, "BSH.Common.Setting.AmbientLightBrightness", value) { settings ->
         device.deviceLog("info", "Settings Sent: ${settings}")
     }
+}
+
+def setVentingLevel(device, level) {
+    Utils.toLogger("debug", "setVentingLevel from ${device} - ${level}")
+    
+    HomeConnectAPI.setSettings(device.deviceNetworkId, "Cooking.Common.Option.Hood.VentingLevel", "Cooking.Hood.EnumType.Stage." + "${level}") { settings ->
+        device.deviceLog("info", "Settings Sent: ${settings}")
+    }
+}
+
+def setIntensiveLevel(device, level) {
+    Utils.toLogger("debug", "setIntensiveLevel from ${device} - ${level}")
+    HomeConnectAPI.setSettings(device.deviceNetworkId, "Cooking.Common.Option.Hood.IntensiveLevel", "Cooking.Hood.EnumType.IntensiveStage." + "${level}") { settings ->
+        device.deviceLog("info", "Settings Sent: ${settings}")
+    }
+}
+
+def getActiveProgramOption(device, optionKey) {
+    Utils.toLogger("debug", "getActiveProgramOption device: ${device}")
+    def availableActiveProgramOptionList = []
+
+    HomeConnectAPI.getActiveProgramOption(device.deviceNetworkId, optionKey) { availableProgramOptions ->
+        Utils.toLogger("info", "getActiveProgramOption availableActiveProgramOptionList: ${availableProgramOptions}")
+        availableActiveProgramOptionList = availableProgramOptions
+    }
+    
+    return availableActiveProgramOptionList    
 }
 
 def getAvailableProgramList(device) {
@@ -757,7 +785,7 @@ def HomeConnectAPI_create(Map params = [:]) {
                 }
             }
         } catch (groovyx.net.http.HttpResponseException e) {
-            if(path.contains('programs/active')) {
+            if(path.contains('programs/active') && !path.contains('programs/active/options')) {
                 // exception case when there is no program active at the moment so just ignore the error here and handle it inside the method intializeStatus
                 throw new Exception("\"${path}\"")
             } else {
@@ -1025,14 +1053,7 @@ def HomeConnectAPI_create(Map params = [:]) {
         apiDelete("${ENDPOINT_APPLIANCES()}/${haId}/programs/active") { response ->
             closure.call(response.data)
         }
-    };        
-        /*def start_program(self, program_key, options=None):
-        """Start a program."""
-        if options is not None:
-            return self.put(
-                "/programs/active", {"data": {"key": program_key, "options": options}}
-            )
-        return self.put("/programs/active", {"data": {"key": program_key}})*/
+    };  
 
     /**
      * Get all options of the active program like temperature or duration.
@@ -1090,17 +1111,6 @@ def HomeConnectAPI_create(Map params = [:]) {
         apiPut("${ENDPOINT_APPLIANCES()}/${haId}/settings/${settingsKey}", [data: data]) { response ->
             closure.call(response.data)
         }
-        
-        /*apiPut("${ENDPOINT_APPLIANCES()}/${haId}/programs/active/options/${optionKey}", 
-               "{\"data\": {\"key\": ${optionKey}, \"value\": ${value}, ${unit}}}") { response ->
-            closure.call(response.data.options)
-        }*/
-        /*apiPut("${ENDPOINT_APPLIANCES()}/${haId}/programs/active/options/${optionKey}", 
-               [data: [key:optionKey ]]
-               "{\"data\": {\"key\": ${optionKey}, \"value\": ${value}, ${unit}}}") { response ->
-            closure.call(response.data.options)
-        }*/
-
     };
 
     /**
