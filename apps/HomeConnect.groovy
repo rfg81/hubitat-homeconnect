@@ -27,6 +27,7 @@
  *  Version: 2.7 - Added support to raw event stream (rawStream), fixed bool SetSettings, fixed OperationState message
  *  Version: 2.8 - Fixed setting a Setting again
  *  Version: 2.9 - Added venting and intensive level support
+ *  Version: 3.0 - Fixed event stream notification messages
  */
 
 import groovy.transform.Field
@@ -50,7 +51,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "2.9" }
+def driverVer() { return "3.0" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -254,12 +255,12 @@ def intializeStatus(device, boolean checkActiveProgram = true) {
     Utils.toLogger("info", "Initializing the status of the device ${haId}")
     HomeConnectAPI.getStatus(haId) { status ->
         device.deviceLog("info", "Status received: ${status}")
-        processMessage(device, status);
+        sendEventToDevice(device, status);
     }
     
     HomeConnectAPI.getSettings(haId) { settings ->
         device.deviceLog("info", "Settings received: ${settings}")
-        processMessage(device, settings);
+        sendEventToDevice(device, settings);
     }
 
     if(checkActiveProgram) {
@@ -443,47 +444,61 @@ def processMessage(device, final String originalText) {
     
     // Parse the lines of data.  Expected types are: event, data, id, retry -- all other fields ignored.
     def (String type, String message) = text.split(':', 2)
-    device.deviceLog("debug", "type: ${type}")
-    device.deviceLog("debug", "message: ${message}")
+    Utils.toLogger("debug", "type: ${type}")
+    Utils.toLogger("debug", "message: ${message}")
     switch (type) {
         case 'id':
-            device.deviceLog("debug", "Received ID: ${message}")
+            Utils.toLogger("debug", "Received ID: ${message}")
             break
 
         case 'data':
-            device.deviceLog("debug", "Received data: ${message}")
+            Utils.toLogger("debug", "Received data: ${message}")
             if (!message.isEmpty()) { // empty messages are just KEEP-AlIVE messages
                 def result = new JsonSlurper().parseText(message)?.items
-                device.deviceLog("debug", "result: ${result}")
+                Utils.toLogger("debug", "result: ${result}")
                 processData(device, result)
             }
             break
 
         case 'event':
-            device.deviceLog("debug", "Received event: ${message}")
+            Utils.toLogger("debug", "Received event: ${message}")
             def result = text.replaceAll("(^[\\r\\n]+|[\\r\\n]+\$)", "");
             //device.deviceLog("debug", "result: ${result}")
             ArrayList linesAllEntries = result.split('\n')
-            //device.deviceLog("debug", "lines: ${lines}")
+            def mapping = [:]
+            linesAllEntries.eachWithIndex { item, index ->
+                def pair = item.split(':', 2)
+                if(pair.first()?.contains("data") && pair.last()?.trim()) {
+                    Utils.toLogger("debug", "pair.last(): ${pair.last()}")
+                    mapping.put(pair.first(), new JsonSlurper().parseText(pair.last()))
+                } else {
+                    mapping.put(pair.first(), pair.last())
+                }
+            }
+            Utils.toLogger("debug", "mapping: ${mapping}")
+            /*Utils.toLogger("debug", "linesAllEntries: ${linesAllEntries}")
             def mapAllEntries = linesAllEntries.collectEntries { entry ->
                 def pair = entry.split(':', 2)
                 [(pair.first()): pair.last()]
+                //Utils.toLogger("debug", "pair: ${pair}")
             }
+            Utils.toLogger("debug", "mapAllEntries: ${mapAllEntries}")
             //device.deviceLog("debug", "mapAllEntries: ${mapAllEntries}")
             def mapConverted = [:]
             Map.Entry<String, String> entry = mapAllEntries.entrySet().iterator().next();
             def keys = mapAllEntries.findAll { it.key != entry.getKey() }.collect { it.key }
             mapConverted.put(entry.getValue(), mapAllEntries.subMap(keys))
-            //device.deviceLog("debug", "mapConverted: ${mapConverted}")
-            processData(device, mapConverted)        
+            Utils.toLogger("debug", "mapConverted: ${mapConverted}")
+            processData(device, mapConverted)*/
+            processData(device, mapping)
             break
 
         case 'retry':
-            device.deviceLog("debug", "Received retry: ${message}")
+            Utils.toLogger("debug", "Received retry: ${message}")
             break
 
         case 'error':
-            device.deviceLog("debug", "Received error: ${message}")
+            Utils.toLogger("debug", "Received error: ${message}")
             def jsonMap = new JsonSlurper().parseText(originalText)
             processData(device, jsonMap)
             break
@@ -494,130 +509,30 @@ def processMessage(device, final String originalText) {
     }    
 }
 
-def processData(device, final data) {
-    Utils.toLogger("debug", "processData: ${device} - ${data}")
+def processData(device, final dataContainer) {
+    Utils.toLogger("debug", "processData: ${device} - ${dataContainer}")
 
-    if(data instanceof ArrayList) {
+    if(dataContainer instanceof ArrayList) {
         //Utils.toLogger("debug", "It's an ArrayList")
-        data.each {
-            switch(it.key) {
-                case "BSH.Common.Root.ActiveProgram":
-                    device.sendEvent(name: "ActiveProgram", value: "${it.displayvalue}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Root.SelectedProgram":
-                    device.sendEvent(name: "SelectedProgram", value: "${it.displayvalue}", displayed: true, isStateChange: true)
-                    device.updateSetting("selectedProgram", [value:"${it.displayvalue}", type:"enum"])
-                break
-                case "BSH.Common.Status.DoorState":
-                    device.sendEvent(name: "DoorState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
-                    device.sendEvent(name: "contact", value: "${it.displayvalue?.toLowerCase()}")
-                break
-                case "BSH.Common.Status.OperationState":
-                    device.sendEvent(name: "OperationState", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Status.LocalControlActive":
-                    device.sendEvent(name: "LocalControlActive", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Status.RemoteControlActive":
-                    device.sendEvent(name: "RemoteControlActive", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Status.RemoteControlStartAllowed":
-                    device.sendEvent(name: "RemoteControlStartAllowed", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Setting.PowerState":
-                    device.sendEvent(name: "PowerState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Setting.TemperatureUnit":
-                    device.sendEvent(name: "TemperatureUnit", value: "${it.displayvalue?.substring(it.displayvalue?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Setting.ChildLock":
-                    device.sendEvent(name: "ChildLock", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Setting.AlarmClock":
-                    device.sendEvent(name: "AlarmClock", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Option.RemainingProgramTime":
-                    device.sendEvent(name: "RemainingProgramTime", value: "${Utils.convertSecondsToTime(it.value)}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Option.ElapsedProgramTime":
-                    device.sendEvent(name: "ElapsedProgramTime", value: "${Utils.convertSecondsToTime(it.value)}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Option.Duration":
-                    device.sendEvent(name: "Duration", value: "${Utils.convertSecondsToTime(it.value)}", displayed: true, isStateChange: true)
-                break                
-                case "BSH.Common.Option.ProgramProgress":
-                    device.sendEvent(name: "ProgramProgress", value: "${it.value}%", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Option.StartInRelative":
-                    device.sendEvent(name: "StartInRelative", value: "${Utils.convertSecondsToTime(it.value)}", displayed: true, isStateChange: true)
-                break
-                case "BSH.Common.Event.ProgramFinished":
-                    device.sendEvent(name: "EventPresentState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
-                break
-                case "Dishcare.Dishwasher.Option.IntensivZone":
-                    device.sendEvent(name: "IntensivZone", value: "${it.value}", displayed: true, isStateChange: true)
-                    device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
-                break
-                case "Dishcare.Dishwasher.Option.BrillianceDry":
-                    device.sendEvent(name: "BrillianceDry", value: "${it.value}", displayed: true, isStateChange: true)
-                    device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
-                break
-                case "Dishcare.Dishwasher.Option.VarioSpeedPlus":
-                    device.sendEvent(name: "VarioSpeedPlus", value: "${it.value}", displayed: true, isStateChange: true)
-                    device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
-                break
-                case "Dishcare.Dishwasher.Option.SilenceOnDemand":
-                    device.sendEvent(name: "SilenceOnDemand", value: "${it.value}", displayed: true, isStateChange: true)
-                    device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
-                break
-                case "Dishcare.Dishwasher.Option.HalfLoad":
-                    device.sendEvent(name: "HalfLoad", value: "${it.value}", displayed: true, isStateChange: true)
-                    device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
-                break
-                case "Dishcare.Dishwasher.Option.ExtraDry":
-                    device.sendEvent(name: "ExtraDry", value: "${it.value}", displayed: true, isStateChange: true)
-                    device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
-                break
-                case "Dishcare.Dishwasher.Option.HygienePlus":
-                    device.sendEvent(name: "HygienePlus", value: "${it.value}", displayed: true, isStateChange: true)
-                    device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
-                break
-                case "Cooking.Common.Option.Hood.VentingLevel":
-                    device.sendEvent(name: "VentingLevel", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
-                break
-                case "Cooking.Common.Option.Hood.IntensiveLevel":
-                    device.sendEvent(name: "IntensiveLevel", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
-                break
-                case "Cooking.Oven.Status.CurrentCavityTemperature":
-                    device.sendEvent(name: "CurrentCavityTemperature", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "Cooking.Common.Setting.LightingBrightness":
-                    device.sendEvent(name: "LightingBrightness", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "Cooking.Common.Setting.Lighting":
-                    device.sendEvent(name: "Lighting", value: "${it.value}", displayed: true, isStateChange: true)
-                break
-                case "error":
-                    device.sendEvent(name: "LastErrorMessage", value: "${Utils.convertErrorMessageTime(it.value?.description)}", displayed: true)
-                break
-                default:
-                    device.deviceLog("error", "Message not supported: (${it})")
-                break
-            }
+        dataContainer.each {
+            sendEventToDevice(device, it.key)
         }
-    } else if(data instanceof Map) {
+    } else if(dataContainer instanceof Map) {
         //Utils.toLogger("debug", "It's a Map")
-        data.each {
-            switch(it.key) {
-                case "KEEP-ALIVE":
+        if(dataContainer.containsKey("event")) {
+            switch(dataContainer.event) {
                 case "STATUS":
-                case "EVENT":
                 case "NOTIFY":
+                case "EVENT":
+                    device.deviceLog("info", "Event: ${dataContainer.event} - Data: ${dataContainer.data?.items}")
+                    sendEventToDevice(device, dataContainer.data?.items)
+                break
+                case "KEEP-ALIVE":
                 case "CONNECTED":
                 case "DISCONNECTED":
                 case "PAIRED":
                 case "DEPAIRED":                
-                    device.deviceLog("info", "Event: ${it.key} - ${it.value}")
+                    device.deviceLog("info", "Event: ${dataContainer.event}")
                 break
                 case "error":
                     if(it.value instanceof Map) {
@@ -630,6 +545,117 @@ def processData(device, final data) {
                     device.deviceLog("debug", "Not supported: ${it.key} - ${it.value}")
                 break
             }
+        }
+    }
+}
+
+def sendEventToDevice(device, final data) {
+    Utils.toLogger("debug", "sendEventToDevice: ${device} - ${data}")
+    
+    data.each {
+        switch(it.key) {
+            case "BSH.Common.Root.ActiveProgram":
+                device.sendEvent(name: "ActiveProgram", value: "${it.displayvalue}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Root.SelectedProgram":
+                device.sendEvent(name: "SelectedProgram", value: "${it.displayvalue}", displayed: true, isStateChange: true)
+                device.updateSetting("selectedProgram", [value:"${it.displayvalue}", type:"enum"])
+            break
+            case "BSH.Common.Status.DoorState":
+                device.sendEvent(name: "DoorState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
+                device.sendEvent(name: "contact", value: "${it.displayvalue?.toLowerCase()}")
+            break
+            case "BSH.Common.Status.OperationState":
+                device.sendEvent(name: "OperationState", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Status.LocalControlActive":
+                device.sendEvent(name: "LocalControlActive", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Status.RemoteControlActive":
+                device.sendEvent(name: "RemoteControlActive", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Status.RemoteControlStartAllowed":
+                device.sendEvent(name: "RemoteControlStartAllowed", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Setting.PowerState":
+                device.sendEvent(name: "PowerState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Setting.TemperatureUnit":
+                device.sendEvent(name: "TemperatureUnit", value: "${it.displayvalue?.substring(it.displayvalue?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Setting.ChildLock":
+                device.sendEvent(name: "ChildLock", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Setting.AlarmClock":
+                device.sendEvent(name: "AlarmClock", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Option.RemainingProgramTime":
+                device.sendEvent(name: "RemainingProgramTime", value: "${Utils.convertSecondsToTime(it.value)}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Option.ElapsedProgramTime":
+                device.sendEvent(name: "ElapsedProgramTime", value: "${Utils.convertSecondsToTime(it.value)}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Option.Duration":
+                device.sendEvent(name: "Duration", value: "${Utils.convertSecondsToTime(it.value)}", displayed: true, isStateChange: true)
+            break                
+            case "BSH.Common.Option.ProgramProgress":
+                device.sendEvent(name: "ProgramProgress", value: "${it.value}%", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Option.StartInRelative":
+                device.sendEvent(name: "StartInRelative", value: "${Utils.convertSecondsToTime(it.value)}", displayed: true, isStateChange: true)
+            break
+            case "BSH.Common.Event.ProgramFinished":
+                device.sendEvent(name: "EventPresentState", value: "${it.displayvalue}", displayed: true, isStateChange: true)
+            break
+            case "Dishcare.Dishwasher.Option.IntensivZone":
+                device.sendEvent(name: "IntensivZone", value: "${it.value}", displayed: true, isStateChange: true)
+                device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
+            break
+            case "Dishcare.Dishwasher.Option.BrillianceDry":
+                device.sendEvent(name: "BrillianceDry", value: "${it.value}", displayed: true, isStateChange: true)
+                device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
+            break
+            case "Dishcare.Dishwasher.Option.VarioSpeedPlus":
+                device.sendEvent(name: "VarioSpeedPlus", value: "${it.value}", displayed: true, isStateChange: true)
+                device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
+            break
+            case "Dishcare.Dishwasher.Option.SilenceOnDemand":
+                device.sendEvent(name: "SilenceOnDemand", value: "${it.value}", displayed: true, isStateChange: true)
+                device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
+            break
+            case "Dishcare.Dishwasher.Option.HalfLoad":
+                device.sendEvent(name: "HalfLoad", value: "${it.value}", displayed: true, isStateChange: true)
+                device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
+            break
+            case "Dishcare.Dishwasher.Option.ExtraDry":
+                device.sendEvent(name: "ExtraDry", value: "${it.value}", displayed: true, isStateChange: true)
+                device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
+            break
+            case "Dishcare.Dishwasher.Option.HygienePlus":
+                device.sendEvent(name: "HygienePlus", value: "${it.value}", displayed: true, isStateChange: true)
+                device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
+            break
+            case "Cooking.Common.Option.Hood.VentingLevel":
+                device.sendEvent(name: "VentingLevel", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "Cooking.Common.Option.Hood.IntensiveLevel":
+                device.sendEvent(name: "IntensiveLevel", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "Cooking.Oven.Status.CurrentCavityTemperature":
+                device.sendEvent(name: "CurrentCavityTemperature", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "Cooking.Common.Setting.LightingBrightness":
+                device.sendEvent(name: "LightingBrightness", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "Cooking.Common.Setting.Lighting":
+                device.sendEvent(name: "Lighting", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "error":
+                device.sendEvent(name: "LastErrorMessage", value: "${Utils.convertErrorMessageTime(it.value?.description)}", displayed: true)
+            break
+            default:
+                device.deviceLog("error", "Message not supported: (${it})")
+            break
         }
     }
 }
@@ -789,7 +815,7 @@ def HomeConnectAPI_create(Map params = [:]) {
                 // exception case when there is no program active at the moment so just ignore the error here and handle it inside the method intializeStatus
                 throw new Exception("\"${path}\"")
             } else {
-                Utils.toLogger("error", "apiGet HttpResponseException - error: ${e.getResponse().getData()} - path: ${path}")
+                Utils.toLogger("error", "apiGet HttpResponseException - error: ${e.getResponse()?.getData()} - path: ${path}")
             }            
         } catch (e)	{
             Utils.toLogger("error", "apiGet - error: ${e} - path: ${path}")
@@ -815,9 +841,9 @@ def HomeConnectAPI_create(Map params = [:]) {
                 }
             }
         } catch (groovyx.net.http.HttpResponseException e) {
-            Utils.toLogger("error", "apiPut HttpResponseException - error: ${e.getResponse().getData()} - path: ${path}")
+            Utils.toLogger("error", "apiPut HttpResponseException - error: ${e.getResponse().getData()} - path: ${path} - body: ${body}")
         } catch (e)	{
-            Utils.toLogger("error", "apiPut - error: ${e} - path: ${path}")
+            Utils.toLogger("error", "apiPut - error: ${e} - path: ${path} - body: ${body}")
         }
     };
 
