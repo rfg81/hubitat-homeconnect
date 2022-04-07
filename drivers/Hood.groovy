@@ -23,6 +23,7 @@
  *  Version: 1.4 - Removed unsupported light commands
  *  Version: 1.5 - Added better handling of STOP events from event stream
  *  Version: 1.6 - Added venting and intensive level support
+ *  Version: 1.7 - Added FanControl capability
  */
 
 import groovy.transform.Field
@@ -32,17 +33,18 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.5" }
+def driverVer() { return "1.7" }
 
 metadata {
     definition(name: "Home Connect Hood", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
         capability "Sensor"
         capability "Switch"
         capability "Initialize"
+        capability "FanControl"
         
         command "setLighting", [[name:"Enable Lighting*", type:"ENUM", constraints:["On", "Off"]]]
         command "setLightingBrightness", [[name:"Lighting Brightness*", type:"NUMBER", description:"Lighting Brightness (values between 10 and 100)"]]
-        command "setVentingLevel", [[name:"Venting Level*", type:"ENUM", constraints:["FanOff", "FanStage01", "FanStage02", "FanStage03", "FanStage04", "FanStage05"]]]
+        //command "setVentingLevel", [[name:"Venting Level*", type:"ENUM", constraints:["FanOff", "FanStage01", "FanStage02", "FanStage03", "FanStage04", "FanStage05"]]]
         command "setIntensiveLevel", [[name:"Intensive Level*", type:"ENUM", constraints:["IntensiveStageOff", "IntensiveStage1", "IntensiveStage2"]]]
         
         command "deviceLog", [[name: "Level*", type:"STRING", description: "Level of the message"], 
@@ -54,6 +56,8 @@ metadata {
         //command "reset"
         command "optionsList"
 
+        attribute "speed", "enum", ["low","medium-low","medium","medium-high","high","on","off","auto"]
+        
         attribute "AvailableProgramsList", "JSON_OBJECT"
         attribute "AvailableOptionsList", "JSON_OBJECT"
 
@@ -178,6 +182,16 @@ metadata {
     
     preferences {
         section { // General
+            
+            /*
+            input "paramInverted", "enum", title: "Fan Buttons Direction", multiple: false, options: ["0" : "Normal (default)", "1" : "Inverted"], required: false, displayDuringSetup: true
+		    input "paramLOW", "number", title: "Low Speed Fan %", multiple: false, defaultValue: "20",  range: "10..100", required: false, displayDuringSetup: true
+		    input "paramMEDLOW", "number", title: "Medium-Low Speed Fan %", multiple: false, defaultValue: "40",  range: "10..100", required: false, displayDuringSetup: true
+		    input "paramMED", "number", title: "Medium Speed Fan %", multiple: false, defaultValue: "60",  range: "10..100", required: false, displayDuringSetup: true
+		    input "paramMEDHIGH", "number", title: "Medium-High Speed Fan %", multiple: false, defaultValue: "80",  range: "10..100", required: false, displayDuringSetup: true
+		    input "paramHIGH", "number", title: "High Speed Fan %", multiple: false, defaultValue: "99",  range: "10..100", required: false, displayDuringSetup: true
+            */
+            
             List<String> availableProgramsList = getAvailableProgramsList()
             if(availableProgramsList.size() != 0)
             {
@@ -212,6 +226,71 @@ def setVentingLevel(level) {
 
 def setIntensiveLevel(level) {
     parent.setIntensiveLevel(device, level)
+}
+
+def setSpeed(fanspeed) {
+    Utils.toLogger("debug", "fanspeed is $fanspeed")
+	def value
+	
+	//speed - ENUM ["low","medium-low","medium","medium-high","high","on","off","auto"]
+    // home connect values - ENUM["FanOff", "FanStage01", "FanStage02", "FanStage03", "FanStage04", "FanStage05"]
+    switch (fanspeed) {
+        case "low":
+            Utils.toLogger("debug", "fanspeed low detected")
+			sendEvent([name: "speed", value: "low", displayed: true, descriptionText: "fan speed set to $fanspeed"])		
+            setVentingLevel("FanStage01")
+			break
+		case "medium-low":
+            Utils.toLogger("debug", "fanspeed medium-low detected")
+			sendEvent([name: "speed", value: "medium-low", displayed: true, descriptionText: "fan speed set to $fanspeed"])		
+			setVentingLevel("FanStage02")
+            break
+		case "medium":
+            Utils.toLogger("debug", "fanspeed medium detected")
+			sendEvent([name: "speed", value: "medium", displayed: true, descriptionText: "fan speed set to $fanspeed"])		
+			setVentingLevel("FanStage03")
+            break
+		case "medium-high":
+            Utils.toLogger("debug", "fanspeed medium-high detected")
+			sendEvent([name: "speed", value: "medium-high", displayed: true, descriptionText: "fan speed set to $fanspeed"])		
+			setVentingLevel("FanStage04")
+            break
+		case "high":
+            Utils.toLogger("debug", "fanspeed high detected")
+			sendEvent([name: "speed", value: "high", displayed: true, descriptionText: "fan speed set to $fanspeed"])		
+			setVentingLevel("FanStage05")
+            break
+		case "off":
+            Utils.toLogger("debug", "speed off detected")
+			sendEvent([name: "speed", value: "off", displayed: true, descriptionText: "fan speed set to off"])		
+			setVentingLevel("FanOff")
+			break
+		case "on":
+            Utils.toLogger("debug", "speed on detected")
+			sendEvent([name: "speed", value: "high", displayed: true, descriptionText: "fan speed set to high"])		
+			setVentingLevel("FanStage05") // max speed
+			break
+		case "auto":
+			//if (logEnable) log.debug "speed auto detected"	
+			//sendEvent([name: "speed", value: "on", displayed: true, descriptionText: "fan speed set to $fanspeed"])		
+			//on()
+            Utils.toLogger("warn", "Speed AUTO requested. This doesn't do anything in this driver right now.")
+			break
+		default:
+            Utils.toLogger("error", "Fan speed option not supported.")
+            break
+    }
+}
+
+def cycleSpeed(){
+    def cycleSpeeds = ["off","low","medium-low","medium","high"]
+    //find the current index
+    def currentIndex = cycleSpeeds.indexOf(device.currentValue("speed") == null ? "off" : device.currentValue("speed"))
+    //calculate the next index 
+    def nextIndex = (currentIndex + 1 > cycleSpeeds.size() - 1) ? 0 : currentIndex + 1
+    //set the speed
+    Utils.toLogger("trace", "Executed 'cycleSpeed'. Next speed: ${cycleSpeeds[nextIndex]}")
+    setSpeed(cycleSpeeds[nextIndex])
 }
 
 void startProgram() {
