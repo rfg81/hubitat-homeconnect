@@ -29,6 +29,7 @@
  *  Version: 2.9 - Added venting and intensive level support
  *  Version: 3.0 - Fixed event stream notification messages
  *  Version: 3.1 - Fixed error stream notification messages
+ *  Version: 3.2 - Added WineCooler, CleaningRobot and CookProcessor devices (not tested)
  */
 
 import groovy.transform.Field
@@ -52,7 +53,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "3.1" }
+def driverVer() { return "3.2" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -202,6 +203,12 @@ def synchronizeDevices() {
 
         def homeConnectDevice = state.foundDevices.find({it.haId == homeConnectDeviceId})
         switch(homeConnectDevice.type) {
+            case "CleaningRobot":
+                device = addChildDevice('rferrazguimaraes', 'Home Connect CleaningRobot', hubitatDeviceId);
+            break
+            case "CookProcessor":
+                device = addChildDevice('rferrazguimaraes', 'Home Connect CookProcessor', hubitatDeviceId);
+            break
             case "Dishwasher":
                 device = addChildDevice('rferrazguimaraes', 'Home Connect Dishwasher', hubitatDeviceId);
             break
@@ -214,13 +221,10 @@ def synchronizeDevices() {
             case "WasherDryer":
                 device = addChildDevice('rferrazguimaraes', 'Home Connect WasherDryer', hubitatDeviceId);
             break
-            case "Refrigerator":
             case "Freezer":
             case "FridgeFreezer":
+            case "Refrigerator":
                 device = addChildDevice('rferrazguimaraes', 'Home Connect FridgeFreezer', hubitatDeviceId);
-            break
-            case "Oven":
-                device = addChildDevice('rferrazguimaraes', 'Home Connect Oven', hubitatDeviceId);
             break
             case "CoffeeMaker":
                 device = addChildDevice('rferrazguimaraes', 'Home Connect CoffeeMaker', hubitatDeviceId);
@@ -231,6 +235,13 @@ def synchronizeDevices() {
             case "Hob":
                 device = addChildDevice('rferrazguimaraes', 'Home Connect Hob', hubitatDeviceId);
             break
+            case "Oven":
+                device = addChildDevice('rferrazguimaraes', 'Home Connect Oven', hubitatDeviceId);
+            break
+            case "WineCooler":
+                device = addChildDevice('rferrazguimaraes', 'Home Connect WineCooler', hubitatDeviceId);
+            break
+            
             default:
                 Utils.toLogger("error", "Not supported: ${homeConnectDevice.type}");
             break
