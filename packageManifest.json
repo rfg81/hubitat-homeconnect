@@ -1,7 +1,7 @@
 {
   "packageName": "Home Connection Integration",
   "author": "Rangner Ferraz Guimaraes",
-  "version": "3.4",
+  "version": "3.5",
   "minimumHEVersion": "2.3.0",
   "dateReleased": "2021-11-28",
   "apps": [
@@ -77,6 +77,27 @@
       "name": "Home Connect WasherDryer",
       "namespace": "rferrazguimaraes",
       "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/WasherDryer.groovy",
+      "required": true
+    },
+    {
+      "id": "53d29ee9-1e76-43b0-8b1b-b23f3e1419b7",
+      "name": "Home Connect CleaningRobot",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/CleaningRobot.groovy",
+      "required": true
+    },
+    {
+      "id": "69a8308d-cb20-4cab-bc80-2bd6734339de",
+      "name": "Home Connect CookProcessor",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/CookProcessor.groovy",
+      "required": true
+    },
+    {
+      "id": "53d29ee9-1e76-43b0-8b1b-b23f3e1419b7",
+      "name": "Home Connect WineCooler",
+      "namespace": "rferrazguimaraes",
+      "location": "https://raw.githubusercontent.com/rfg81/hubitat-homeconnect/main/drivers/WineCooler.groovy",
       "required": true
     }
   ]
