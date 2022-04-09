@@ -28,6 +28,7 @@
  *  Version: 2.8 - Fixed setting a Setting again
  *  Version: 2.9 - Added venting and intensive level support
  *  Version: 3.0 - Fixed event stream notification messages
+ *  Version: 3.1 - Fixed error stream notification messages
  */
 
 import groovy.transform.Field
@@ -51,7 +52,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "3.0" }
+def driverVer() { return "3.1" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -513,12 +514,12 @@ def processData(device, final dataContainer) {
     Utils.toLogger("debug", "processData: ${device} - ${dataContainer}")
 
     if(dataContainer instanceof ArrayList) {
-        //Utils.toLogger("debug", "It's an ArrayList")
+        //Utils.toLogger("debug", "It's an ArrayList: ${dataContainer}")
         dataContainer.each {
             sendEventToDevice(device, it.key)
         }
     } else if(dataContainer instanceof Map) {
-        //Utils.toLogger("debug", "It's a Map")
+        //Utils.toLogger("debug", "It's a Map: ${dataContainer}")
         if(dataContainer.containsKey("event")) {
             switch(dataContainer.event) {
                 case "STATUS":
@@ -534,17 +535,12 @@ def processData(device, final dataContainer) {
                 case "DEPAIRED":                
                     device.deviceLog("info", "Event: ${dataContainer.event}")
                 break
-                case "error":
-                    if(it.value instanceof Map) {
-                        device.deviceLog("error", "Error ${Utils.convertErrorMessageTime(it.value.toMapString())replaceAll("^\\[|\\]\$", "")}")
-                    } else {
-                        device.deviceLog("error", "Error: ${it.value}")
-                    }
-                break
                 default:
-                    device.deviceLog("debug", "Not supported: ${it.key} - ${it.value}")
+                    device.deviceLog("error", "Event not supported: ${dataContainer}")
                 break
             }
+        } else if(dataContainer.containsKey("error")) {
+            device.deviceLog("error", "Error Key: ${dataContainer.error?.key} - Description: ${Utils.convertErrorMessageTime(dataContainer.error?.description).replaceAll("^\\[|\\]\$", "")}")
         }
     }
 }
