@@ -18,6 +18,7 @@
  *  Date: 2021-11-28
  *  Version: 1.0 - Initial commit
  *  Version: 1.1 - Added better handling of STOP events from event stream
+ *  Version: 1.2 - Updating program when pressing 'Initialize' button
  */
 
 import groovy.transform.Field
@@ -27,7 +28,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.1" }
+def driverVer() { return "1.2" }
 
 metadata {
     definition(name: "Home Connect Oven", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
@@ -159,7 +160,8 @@ metadata {
         
         attribute "EventStreamStatus", "enum", ["connected", "disconnected"]
         
-        attribute "CurrentCavityTemperature", "number"        
+        attribute "CurrentCavityTemperature", "number"  
+        attribute "DriverVersion", "string"
     }
     
     preferences {
@@ -177,7 +179,7 @@ metadata {
                 input name:optionName, type:"bool", title: "${titleName}", defaultValue: false 
             }
 
-            input name: "logLevel", title: "Log Level", type: "enum", options: LOG_LEVELS, defaultValue: DEFAULT_LOG_LEVEL, required: false
+            input name: "logLevel", title: "Log Level", type: "enum", options: LOG_LEVELS, defaultValue: DEFAULT_LOG_LEVEL, required: true
         }
     }
 }
@@ -192,20 +194,18 @@ void startProgram() {
 }
 
 void stopProgram() {
-    parent.stopProgram(device);
+    parent.stopProgram(device)
 }
 
 void initialize() {
     Utils.toLogger("debug", "initialize()")
-    intializeStatus();
+    intializeStatus()
     //runEvery1Minute("intializeStatus")
 }
 
 void installed() {
     Utils.toLogger("debug", "installed()")
-    updateAvailableProgramList();
-    updateAvailableOptionsList();
-    intializeStatus();
+    intializeStatus()
 }
 
 void updated() {
@@ -299,6 +299,8 @@ def off() {
 void intializeStatus() {
     Utils.toLogger("debug", "Initializing the status of the device")
 
+    updateAvailableProgramList()
+    updateAvailableOptionsList()
     parent.intializeStatus(device)
     
     try {
@@ -382,6 +384,7 @@ void eventStreamStatus(String text) {
 void parse(String text) {
     Utils.toLogger("debug", "Received eventstream message: ${text}")  
     parent.processMessage(device, text)
+    sendEvent(name: "DriverVersion", value: driverVer())
 }
 
 def deviceLog(level, msg) {
