@@ -30,6 +30,7 @@
  *  Version: 3.0 - Fixed event stream notification messages
  *  Version: 3.1 - Fixed error stream notification messages
  *  Version: 3.2 - Added WineCooler, CleaningRobot and CookProcessor devices (not tested)
+ *  Version: 3.3 - Added missing messages: FreshMode, VacationMode and SabbathMode
  */
 
 import groovy.transform.Field
@@ -53,7 +54,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "3.2" }
+def driverVer() { return "3.3" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -648,14 +649,24 @@ def sendEventToDevice(device, final data) {
             case "Cooking.Common.Option.Hood.IntensiveLevel":
                 device.sendEvent(name: "IntensiveLevel", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
             break
-            case "Cooking.Oven.Status.CurrentCavityTemperature":
-                device.sendEvent(name: "CurrentCavityTemperature", value: "${it.value}", displayed: true, isStateChange: true)
-            break
             case "Cooking.Common.Setting.LightingBrightness":
                 device.sendEvent(name: "LightingBrightness", value: "${it.value}", displayed: true, isStateChange: true)
             break
             case "Cooking.Common.Setting.Lighting":
                 device.sendEvent(name: "Lighting", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "Cooking.Oven.Status.CurrentCavityTemperature":
+                device.sendEvent(name: "CurrentCavityTemperature", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "Cooking.Oven.Setting.SabbathMode":
+            case "Refrigeration.Common.Setting.SabbathMode":
+                device.sendEvent(name: "SabbathMode", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "Refrigeration.Common.Setting.FreshMode":
+                device.sendEvent(name: "FreshMode", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "Refrigeration.Common.Setting.VacationMode":
+                device.sendEvent(name: "VacationMode", value: "${it.value}", displayed: true, isStateChange: true)
             break
             case "error":
                 device.sendEvent(name: "LastErrorMessage", value: "${Utils.convertErrorMessageTime(it.value?.description)}", displayed: true)
