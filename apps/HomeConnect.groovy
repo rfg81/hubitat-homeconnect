@@ -1,5 +1,5 @@
 /**
- *  Copyright 2021
+ *  Copyright 2022
  *
  *  Based on the original work done by https://github.com/Wattos/hubitat
  * 
@@ -31,6 +31,7 @@
  *  Version: 3.1 - Fixed error stream notification messages
  *  Version: 3.2 - Added WineCooler, CleaningRobot and CookProcessor devices (not tested)
  *  Version: 3.3 - Added missing messages: FreshMode, VacationMode and SabbathMode
+ *  Version: 3.4 - Changed installation process
  */
 
 import groovy.transform.Field
@@ -123,6 +124,7 @@ def pageIntro() {
                     |    * <b>Redirect URI</b>: ${getFullApiServerUrl()}/oauth/callback
                     |    * You can leave the rest as blank
                     | 4. Copy the following values down below.
+                    | 5. Wait 30 minutes before pressing the 'Next' button on this page (this is needed on the HomeConnect side to register your application above on their servers)
                     |""".stripMargin()) {}
             section('Enter your Home Connect Developer Details.') {
                 input name: 'clientId', title: 'Client ID', type: 'text', required: true
@@ -131,7 +133,7 @@ def pageIntro() {
        			input "logLevel", "enum", title: "Log Level", options: LOG_LEVELS, defaultValue: DEFAULT_LOG_LEVEL, required: false
             }
             section('''\
-                    |Press 'Next' to connect to your Home Connect Account.
+                    |Press 'Next' to connect to your Home Connect Account if 30 minutes have passed.
                     |'''.stripMargin()) {}
     }
 }
