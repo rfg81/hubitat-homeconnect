@@ -21,6 +21,7 @@
  *  Version: 1.2 - Fixed program errors
  *  Version: 1.3 - Added better handling of STOP events from event stream
  *  Version: 1.4 - Updating program when pressing 'Initialize' button
+ *  Version: 1.5 - Added support for events DoorAlarmFreezer, DoorAlarmRefrigerator and TemperatureAlarmFreezer
  */
 
 import groovy.transform.Field
@@ -30,7 +31,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.4" }
+def driverVer() { return "1.5" }
 
 metadata {
     definition(name: "Home Connect FridgeFreezer", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
@@ -159,6 +160,10 @@ metadata {
             // Description: The event has been confirmed by the user.
             "Confirmed"
         ]
+        
+        attribute "DoorAlarmFreezer", "string"
+        attribute "DoorAlarmRefrigerator", "string"
+        attribute "TemperatureAlarmFreezer", "string"
         
         attribute "EventStreamStatus", "enum", ["connected", "disconnected"]
         attribute "DriverVersion", "string"
