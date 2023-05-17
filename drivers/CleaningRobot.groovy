@@ -17,6 +17,7 @@
  *  Author: Rangner Ferraz Guimaraes (rferrazguimaraes)
  *  Date: 2021-11-28
  *  Version: 1.0 - Initial commit
+ *  Version: 1.1 - Added support for events EmptyDustBoxAndCleanFilter, RobotIsStuck and DockingStationNotFound
  */
 
 import groovy.transform.Field
@@ -26,7 +27,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.0" }
+def driverVer() { return "1.1" }
 
 metadata {
     definition(name: "Home Connect CleaningRobot", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
@@ -160,13 +161,9 @@ metadata {
         attribute "RemainingProgramTime", "string"        
 
         // options - https://api-docs.home-connect.com/programs-and-options?#dishwasher
-        attribute "IntensivZone", "string"
-        attribute "BrillianceDry", "string"
-        attribute "VarioSpeedPlus", "string"
-        attribute "SilenceOnDemand", "string"
-        attribute "HalfLoad", "string"
-        attribute "ExtraDry", "string"
-        attribute "HygienePlus", "string"
+        attribute "EmptyDustBoxAndCleanFilter", "string"
+        attribute "RobotIsStuck", "string"
+        attribute "DockingStationNotFound", "string"
         
         attribute "EventStreamStatus", "enum", ["connected", "disconnected"]
         attribute "DriverVersion", "string"
