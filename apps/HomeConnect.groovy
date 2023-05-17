@@ -32,6 +32,7 @@
  *  Version: 3.2 - Added WineCooler, CleaningRobot and CookProcessor devices (not tested)
  *  Version: 3.3 - Added missing messages: FreshMode, VacationMode and SabbathMode
  *  Version: 3.4 - Changed installation process
+ *  Version: 3.5 - Added support for more events
  */
 
 import groovy.transform.Field
@@ -55,7 +56,7 @@ definition(
 @Field Utils = Utils_create();
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
-def driverVer() { return "3.4" }
+def driverVer() { return "3.5" }
 
 //  ===== Settings =====
 private getClientId() { settings.clientId }
@@ -645,6 +646,21 @@ def sendEventToDevice(device, final data) {
                 device.sendEvent(name: "HygienePlus", value: "${it.value}", displayed: true, isStateChange: true)
                 device.updateSetting("${it.name.replaceAll("\\s","")}", [value:"${it.value}", type:"bool"])
             break
+            case "Dishcare.Dishwasher.Event.RinseAidNearlyEmpty":
+                device.sendEvent(name: "RinseAidNearlyEmpty", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "Dishcare.Dishwasher.Event.SaltNearlyEmpty":
+                device.sendEvent(name: "SaltNearlyEmpty", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "ConsumerProducts.CoffeeMaker.Event.BeanContainerEmpty":
+                device.sendEvent(name: "BeanContainerEmpty", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "ConsumerProducts.CoffeeMaker.Event.WaterTankEmpty":
+                device.sendEvent(name: "WaterTankEmpty", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "ConsumerProducts.CoffeeMaker.Event.DripTrayFull":
+                device.sendEvent(name: "DripTrayFull", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
             case "Cooking.Common.Option.Hood.VentingLevel":
                 device.sendEvent(name: "VentingLevel", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
             break
@@ -669,6 +685,36 @@ def sendEventToDevice(device, final data) {
             break
             case "Refrigeration.Common.Setting.VacationMode":
                 device.sendEvent(name: "VacationMode", value: "${it.value}", displayed: true, isStateChange: true)
+            break
+            case "Refrigeration.FridgeFreezer.Event.DoorAlarmFreezer":
+                device.sendEvent(name: "DoorAlarmFreezer", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "Refrigeration.FridgeFreezer.Event.DoorAlarmRefrigerator":
+                device.sendEvent(name: "DoorAlarmRefrigerator", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "Refrigeration.FridgeFreezer.Event.TemperatureAlarmFreezer":
+                device.sendEvent(name: "TemperatureAlarmFreezer", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "ConsumerProducts.CleaningRobot.Event.EmptyDustBoxAndCleanFilter":
+                device.sendEvent(name: "EmptyDustBoxAndCleanFilter", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "ConsumerProducts.CleaningRobot.Event.RobotIsStuck":
+                device.sendEvent(name: "RobotIsStuck", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "ConsumerProducts.CleaningRobot.Event.DockingStationNotFound":
+                device.sendEvent(name: "RobotIsStuck", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "LaundryCare.Washer.Event.IDos1FillLevelPoor":
+                device.sendEvent(name: "IDos1FillLevelPoor", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "LaundryCare.Washer.Event.IDos2FillLevelPoor":
+                device.sendEvent(name: "IDos2FillLevelPoor", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "Cooking.Common.Event.Hood.GreaseFilterMaxSaturationNearlyReached":
+                device.sendEvent(name: "GreaseFilterMaxSaturationNearlyReached", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
+            break
+            case "Cooking.Common.Event.Hood.GreaseFilterMaxSaturationReached":
+                device.sendEvent(name: "GreaseFilterMaxSaturationReached", value: "${it.value?.substring(it.value?.lastIndexOf(".")+1)}", displayed: true, isStateChange: true)
             break
             case "error":
                 device.sendEvent(name: "LastErrorMessage", value: "${Utils.convertErrorMessageTime(it.value?.description)}", displayed: true)
