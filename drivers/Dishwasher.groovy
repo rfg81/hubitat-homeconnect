@@ -20,6 +20,7 @@
  *  Version: 1.1 - Added attributes ProgramProgress and RemainingProgramTime
  *  Version: 1.2 - Added better handling of STOP events from event stream
  *  Version: 1.3 - Updating program when pressing 'Initialize' button
+ *  Version: 1.4 - Added events for RinseAidNearlyEmpty and SaltNearlyEmpty
  */
 
 import groovy.transform.Field
@@ -29,7 +30,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.3" }
+def driverVer() { return "1.4" }
 
 metadata {
     definition(name: "Home Connect Dishwasher", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
@@ -170,6 +171,8 @@ metadata {
         attribute "HalfLoad", "string"
         attribute "ExtraDry", "string"
         attribute "HygienePlus", "string"
+        attribute "RinseAidNearlyEmpty", "string"
+        attribute "SaltNearlyEmpty", "string"
         
         attribute "EventStreamStatus", "enum", ["connected", "disconnected"]
         attribute "DriverVersion", "string"
