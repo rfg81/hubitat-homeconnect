@@ -19,6 +19,7 @@
  *  Version: 1.0 - Initial commit
  *  Version: 1.1 - Added better handling of STOP events from event stream
  *  Version: 1.2 - Updating program when pressing 'Initialize' button
+ *  Version: 1.3 - Added support for events IDos1FillLevelPoor and IDos2FillLevelPoor
  */
 
 import groovy.transform.Field
@@ -28,7 +29,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.2" }
+def driverVer() { return "1.3" }
 
 metadata {
     definition(name: "Home Connect Washer", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
@@ -158,6 +159,8 @@ metadata {
             "Confirmed"
         ]
         
+        attribute "IDos1FillLevelPoor", "string"
+        attribute "IDos2FillLevelPoor", "string"
         attribute "EventStreamStatus", "enum", ["connected", "disconnected"]
         attribute "DriverVersion", "string"
     }
