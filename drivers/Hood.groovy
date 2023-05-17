@@ -25,6 +25,7 @@
  *  Version: 1.6 - Added venting and intensive level support
  *  Version: 1.7 - Added FanControl capability
  *  Version: 1.8 - Updating program when pressing 'Initialize' button
+ *  Version: 1.9 - Added support for events GreaseFilterMaxSaturationNearlyReached and GreaseFilterMaxSaturationReached
  */
 
 import groovy.transform.Field
@@ -34,7 +35,7 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.8" }
+def driverVer() { return "1.9" }
 
 metadata {
     definition(name: "Home Connect Hood", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
@@ -179,6 +180,8 @@ metadata {
         attribute "LightingBrightness", "number"
         attribute "Lighting", "enum", ["true", "false"]
         attribute "LocalControlActive", "enum", ["true", "false"]
+        attribute "GreaseFilterMaxSaturationNearlyReached", "string"
+        attribute "GreaseFilterMaxSaturationReached", "string"
         attribute "DriverVersion", "string"
     }
     
