@@ -21,6 +21,7 @@
  *  Version: 1.2 - Added better handling of STOP events from event stream
  *  Version: 1.3 - Updating program when pressing 'Initialize' button
  *  Version: 1.4 - Added events for RinseAidNearlyEmpty and SaltNearlyEmpty
+ *  Version: 1.5 - Added event for StartInRelative
  */
 
 import groovy.transform.Field
@@ -162,6 +163,7 @@ metadata {
         
         attribute "ProgramProgress", "number"
         attribute "RemainingProgramTime", "string"        
+        attribute "StartInRelative", "string"      
 
         // options - https://api-docs.home-connect.com/programs-and-options?#dishwasher
         attribute "IntensivZone", "string"
