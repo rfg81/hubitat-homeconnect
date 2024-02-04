@@ -157,6 +157,9 @@ metadata {
             // Description: The event has been confirmed by the user.
             "Confirmed"
         ]
+
+        attribute "ProgramProgress", "number"
+        attribute "RemainingProgramTime", "string"
         
         attribute "EventStreamStatus", "enum", ["connected", "disconnected"]
         attribute "DriverVersion", "string"
