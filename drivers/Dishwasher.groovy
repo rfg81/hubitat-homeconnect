@@ -1,8 +1,10 @@
 /**
  *  Home Connect Dishwasher (Child Device of Home Connection Integration)
  *
- *  Author: Rangner Ferraz Guimaraes (rferrazguimaraes)
- *  Contributors: @you-know-who for Hubitat update compatibility & Node-RED remaining-time support
+ *  Author: 
+ *  Current owner: Craig Dewar (craigde) > 1.7
+ *  Contributors:Rangner Ferraz Guimaraes (rferrazguimaraes) for original driver port
+ *  
  *
  *  Version history
  *  1.0 - Initial commit
@@ -13,6 +15,8 @@
  *  1.5 - Added event for StartInRelative
  *  1.6 - Local STATUS sniffing, contact mirroring, bool preference read, JSON .toString()
  *  1.7 - Hubitat update compatibility; also parse Option.* ProgramProgress/RemainingProgramTime and expose remainingTime/remainingTimeDisplay
+ *  1.8 - Small fixes
+ *  1.9 - Added local handling for BSH.Common.Event.ProgramFinished event
  */
 
 import groovy.transform.Field
@@ -22,10 +26,10 @@ import groovy.json.JsonSlurper
 @Field List<String> LOG_LEVELS = ["error", "warn", "info", "debug", "trace"]
 @Field String DEFAULT_LOG_LEVEL = LOG_LEVELS[1]
 @Field static final Integer eventStreamDisconnectGracePeriod = 30
-def driverVer() { return "1.7" }
+def driverVer() { return "1.9" }
 
 metadata {
-    definition(name: "Home Connect Dishwasher", namespace: "rferrazguimaraes", author: "Rangner Ferraz Guimaraes") {
+    definition(name: "Home Connect Dishwasher", namespace: "craigde", author: "Craig Dewar") {
         capability "Sensor"
         capability "Switch"
         capability "ContactSensor"
@@ -57,6 +61,7 @@ metadata {
 
         attribute "ProgramProgress", "number"
         attribute "RemainingProgramTime", "string"     // HH:MM display
+        attribute "ElapsedProgramTime", "string"       // HH:MM display
         attribute "StartInRelative", "string"
 
         // Common dishwasher options (string attributes so we can show true/false words)
@@ -73,6 +78,8 @@ metadata {
         // Extra attributes for Node-RED SVG flow
         attribute "remainingTime", "number"            // seconds
         attribute "remainingTimeDisplay", "string"     // HH:MM
+        attribute "elapsedTime", "number"              // seconds
+        attribute "elapsedTimeDisplay", "string"       // HH:MM
 
         attribute "EventStreamStatus", "enum", ["connected", "disconnected"]
         attribute "DriverVersion", "string"
@@ -363,6 +370,48 @@ void parse(String text) {
                                 // Extras for Node-RED SVG flow
                                 sendEvent(name: "remainingTime", value: secs, isStateChange: true)
                                 sendEvent(name: "remainingTimeDisplay", value: hhmm, isStateChange: false)
+                            }
+                            break
+
+                        /* --- Elapsed time (may come as Status.* or Option.*) --- */
+                        case 'BSH.Common.Status.ElapsedProgramTime':
+                        case 'BSH.Common.Option.ElapsedProgramTime':
+                            Integer secs = (valObj instanceof Number) ? (valObj as Integer)
+                                       : (valStr?.isInteger() ? valStr.toInteger() : null)
+                            if (secs != null) {
+                                String hhmm = formatHHMMFromSeconds(secs)
+                                sendEvent(name: "ElapsedProgramTime", value: hhmm, isStateChange: true)
+                                // Extras for Node-RED SVG flow
+                                sendEvent(name: "elapsedTime", value: secs, isStateChange: true)
+                                sendEvent(name: "elapsedTimeDisplay", value: hhmm, isStateChange: false)
+                            }
+                            break
+
+                        /* --- Program finished event --- */
+                        case 'BSH.Common.Event.ProgramFinished':
+                            String eventState = valStr?.tokenize('.')?.last()
+                            String mappedState = null
+                            switch (eventState) {
+                                case 'Present':
+                                    mappedState = 'Event active'
+                                    // Reset progress and time when program finishes
+                                    sendEvent(name: "ProgramProgress", value: 0, isStateChange: true)
+                                    sendEvent(name: "RemainingProgramTime", value: "00:00", isStateChange: true)
+                                    sendEvent(name: "remainingTime", value: 0, isStateChange: true)
+                                    sendEvent(name: "remainingTimeDisplay", value: "00:00", isStateChange: false)
+                                    Utils.toLogger("info", "Program finished")
+                                    break
+                                case 'Off':
+                                    mappedState = 'Off'
+                                    Utils.toLogger("info", "Program finished event cleared")
+                                    break
+                                case 'Confirmed':
+                                    mappedState = 'Confirmed'
+                                    Utils.toLogger("info", "Program finished event confirmed")
+                                    break
+                            }
+                            if (mappedState) {
+                                sendEvent(name: "EventPresentState", value: mappedState, isStateChange: true)
                             }
                             break
                     } // switch
